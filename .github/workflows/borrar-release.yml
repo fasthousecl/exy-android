@@ -1,0 +1,18 @@
+name: Borrar release viejo (temporal)
+
+on:
+  push:
+    branches: [claude/exy-inicial]
+    paths: [.github/workflows/borrar-release.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  borrar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Borrar v1.0.3 (versión Porcupine)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete v1.0.3 --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
