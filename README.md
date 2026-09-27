@@ -129,10 +129,11 @@ lo necesites.
 ## 4. Cómo funciona
 
 1. Un servicio en primer plano (tipo `microphone`) mantiene a Vosk escuchando.
-   Todo el audio se procesa en el teléfono; la app ni siquiera pide permiso de
-   internet.
+   Todo el audio se procesa en el teléfono; internet solo se usa para revisar
+   si hay versión nueva.
 2. Vosk usa una **gramática restringida**: solo puede reconocer las frases de
-   [`comandos.json`](app/src/main/assets/comandos.json) y «[unk]» (cualquier
+   [`comandos.json`](app/src/main/assets/comandos.json), tus comandos propios y
+   «[unk]» (cualquier
    otra cosa). Cada frase es *oye + exi + [prefijo] + [destino]*. Como "exi" y
    "ChatGPT" no son palabras del español, se aceptan las formas en que el modelo
    las oye (*exi, exis, ex si, equis*; *chat ge pe te, chat ji pi ti*…). Además,
