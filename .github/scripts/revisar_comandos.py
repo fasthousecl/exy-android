@@ -53,13 +53,28 @@ t = time.time()
 vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica, ensure_ascii=False))
 print(f"Crear el reconocedor con la gramática tardó {time.time() - t:.2f} s (en el runner)")
 
+libre = None
 for frase, esperado in c.get("pruebas", {}).items():
-    audio = subprocess.run(
-        f'espeak-ng -v es -s 150 --stdout "{frase}" | ffmpeg -loglevel error -i - -ar 16000 -ac 1 -f s16le -',
-        shell=True, capture_output=True,
-    ).stdout
-    rec = vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica, ensure_ascii=False))
-    rec.SetWords(True)
-    rec.AcceptWaveform(b"\0\0" * 8000 + audio + b"\0\0" * 16000)
-    texto = json.loads(rec.FinalResult()).get("text", "")
-    print(f"  «{frase}» ({esperado}) → Vosk entendió: «{texto}»")
+    wav = subprocess.run(
+        ["espeak-ng", "-v", "es", "-s", "140", "--stdout", frase], capture_output=True,
+    )
+    pcm = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-f", "wav", "-i", "pipe:0",
+         "-ar", "16000", "-ac", "1", "-f", "s16le", "pipe:1"],
+        input=wav.stdout, capture_output=True,
+    )
+    audio = pcm.stdout
+    if not audio:
+        print(f"  «{frase}»: sin audio (espeak {len(wav.stdout)} bytes, {wav.stderr[:200]!r} {pcm.stderr[:200]!r})")
+        continue
+    silencio = b"\0\0" * 8000
+
+    def reconocer(gram):
+        rec = vosk.KaldiRecognizer(modelo, 16000, gram) if gram else vosk.KaldiRecognizer(modelo, 16000)
+        rec.SetWords(True)
+        rec.AcceptWaveform(silencio + audio + silencio * 2)
+        return json.loads(rec.FinalResult()).get("text", "")
+
+    con = reconocer(json.dumps(gramatica, ensure_ascii=False))
+    sin = reconocer(None)
+    print(f"  «{frase}» ({esperado}, {len(audio) / 32000:.1f} s) → con gramática: «{con}» | libre: «{sin}»")
