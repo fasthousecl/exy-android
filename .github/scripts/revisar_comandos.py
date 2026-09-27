@@ -32,7 +32,7 @@ codigo = (
     "vosk.KaldiRecognizer(m, 16000, sys.argv[2])\n"
 )
 r = subprocess.run(
-    [sys.executable, "-c", codigo, MODELO, json.dumps(palabras + ["[unk]"])],
+    [sys.executable, "-c", codigo, MODELO, json.dumps(palabras + ["[unk]"], ensure_ascii=False)],
     capture_output=True, text=True,
 )
 faltan = sorted({l.split("'")[1] for l in r.stderr.splitlines() if "missing in vocabulary" in l})
@@ -50,7 +50,7 @@ import vosk  # noqa: E402
 vosk.SetLogLevel(-1)
 modelo = vosk.Model(MODELO)
 t = time.time()
-vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica))
+vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica, ensure_ascii=False))
 print(f"Crear el reconocedor con la gramática tardó {time.time() - t:.2f} s (en el runner)")
 
 for frase, esperado in c.get("pruebas", {}).items():
@@ -58,7 +58,7 @@ for frase, esperado in c.get("pruebas", {}).items():
         f'espeak-ng -v es -s 150 --stdout "{frase}" | ffmpeg -loglevel error -i - -ar 16000 -ac 1 -f s16le -',
         shell=True, capture_output=True,
     ).stdout
-    rec = vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica))
+    rec = vosk.KaldiRecognizer(modelo, 16000, json.dumps(gramatica, ensure_ascii=False))
     rec.SetWords(True)
     rec.AcceptWaveform(b"\0\0" * 8000 + audio + b"\0\0" * 16000)
     texto = json.loads(rec.FinalResult()).get("text", "")
