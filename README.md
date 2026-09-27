@@ -105,7 +105,7 @@ lo necesites.
    [`comandos.json`](app/src/main/assets/comandos.json) y «[unk]» (cualquier
    otra cosa). Cada frase es *oye + exi + [prefijo] + [destino]*. Como "exi" y
    "ChatGPT" no son palabras del español, se aceptan las formas en que el modelo
-   las oye (*exi, exis, ex si, equis*; *chat ge pe te, chat yipití*…). Además,
+   las oye (*exi, exis, ex si, equis*; *chat ge pe te, chat ji pi ti*…). Además,
    cada palabra debe superar una confianza mínima que fija el control de
    sensibilidad.
 3. Al detectar la frase: vibración corta → Vosk se detiene y libera el
