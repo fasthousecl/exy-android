@@ -18,6 +18,8 @@ import org.json.JSONObject
 class Comandos private constructor(
     private val oye: List<String>,
     private val exi: List<String>,
+    /** Formas de "exi" demasiado comunes ("oye, sí"): solo valen seguidas de una orden. */
+    private val exiDebil: List<String>,
     private val prefijos: List<String>,
     /** Texto del destino (p. ej. "claude code") → destino. */
     private val destinos: Map<String, Destino>,
@@ -30,6 +32,8 @@ class Comandos private constructor(
 
     private val activaciones: List<String> = oye.flatMap { o -> exi.map { e -> "$o $e" } }
 
+    private val activacionesDebiles: List<String> = oye.flatMap { o -> exiDebil.map { e -> "$o $e" } }
+
     private val ordenes: List<String> =
         (destinos.keys + prefijos.flatMap { p -> destinos.keys.map { d -> "$p $d" } } + atajos.keys).distinct()
 
@@ -40,7 +44,7 @@ class Comandos private constructor(
      */
     val gramatica: String = JSONArray(
         activaciones +
-            activaciones.flatMap { a -> ordenes.map { o -> "$a $o" } } +
+            (activaciones + activacionesDebiles).flatMap { a -> ordenes.map { o -> "$a $o" } } +
             oye +
             "[unk]",
     ).toString()
@@ -59,12 +63,14 @@ class Comandos private constructor(
         // Buscar la activación («oye exi») en cualquier punto de la frase.
         var inicio = -1
         var largo = 0
+        var debil = false
         loop@ for (i in palabras.indices) {
-            for (a in activaciones) {
+            for (a in activaciones + activacionesDebiles) {
                 val partes = a.split(' ')
                 if (palabras.size - i >= partes.size && palabras.subList(i, i + partes.size) == partes) {
                     inicio = i
                     largo = partes.size
+                    debil = a in activacionesDebiles
                     break@loop
                 }
             }
@@ -76,6 +82,7 @@ class Comandos private constructor(
         val destino: Destino
         val usadas: List<String>
         if (resto.isEmpty()) {
+            if (debil) return null
             destino = Destino.FAVORITO
             usadas = palabras.subList(inicio, inicio + largo)
         } else {
@@ -131,6 +138,7 @@ class Comandos private constructor(
             return Comandos(
                 oye = json.getJSONArray("oye").strings(),
                 exi = json.getJSONArray("exi").strings(),
+                exiDebil = json.optJSONArray("exi_debil")?.strings().orEmpty(),
                 prefijos = json.getJSONArray("prefijos").strings(),
                 destinos = destinos,
                 atajos = atajos,
