@@ -1,0 +1,25 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Firmas de release (nunca al repositorio)
+*.jks
+release.keystore
+
+# Archivos de Picovoice: se importan desde la app, jamás se versionan
+*.ppn
+*.pv
+**/assets/*.ppn
+**/assets/*.pv
+
+# Claves y secretos
+.env
+*.env
+secrets.properties

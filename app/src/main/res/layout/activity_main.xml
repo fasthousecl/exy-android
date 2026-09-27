@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
+
+        <!-- Servicio -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_service" />
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartStop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_start" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTestAssistant"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/btn_test_assistant" />
+        </LinearLayout>
+
+        <!-- AccessKey -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_access_key" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/hint_access_key"
+            app:endIconMode="password_toggle">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editAccessKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="textPassword|textNoSuggestions" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/txtKeyStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveKey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_save_key" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteKey"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/btn_delete_key" />
+        </LinearLayout>
+
+        <!-- Archivos -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_files" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnImportPpn"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_import_ppn" />
+
+        <TextView
+            android:id="@+id/txtPpn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnImportPv"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_import_pv" />
+
+        <TextView
+            android:id="@+id/txtPv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Ajustes -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_tuning" />
+
+        <TextView
+            android:id="@+id/txtSensitivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderSensitivity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="0.05"
+            android:valueFrom="0.0"
+            android:valueTo="1.0" />
+
+        <TextView
+            style="@style/Exy.Help"
+            android:text="@string/help_sensitivity" />
+
+        <TextView
+            android:id="@+id/txtResumeDelay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderResumeDelay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="5"
+            android:valueFrom="10"
+            android:valueTo="300" />
+
+        <TextView
+            style="@style/Exy.Help"
+            android:text="@string/help_resume_delay" />
+
+        <!-- Permisos -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_permissions" />
+
+        <LinearLayout
+            android:id="@+id/rowMic"
+            style="@style/Exy.PermRow">
+
+            <TextView
+                style="@style/Exy.PermLabel"
+                android:text="@string/perm_mic" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPermMic"
+                style="@style/Exy.PermButton" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/Exy.PermRow">
+
+            <TextView
+                style="@style/Exy.PermLabel"
+                android:text="@string/perm_notifications" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPermNotif"
+                style="@style/Exy.PermButton" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/Exy.PermRow">
+
+            <TextView
+                style="@style/Exy.PermLabel"
+                android:text="@string/perm_overlay" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPermOverlay"
+                style="@style/Exy.PermButton" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/Exy.PermRow">
+
+            <TextView
+                style="@style/Exy.PermLabel"
+                android:text="@string/perm_battery" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPermBattery"
+                style="@style/Exy.PermButton" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtVersion"
+            style="@style/Exy.Help"
+            android:layout_marginTop="24dp" />
+    </LinearLayout>
+</ScrollView>

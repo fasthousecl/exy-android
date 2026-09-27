@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Micrófono simple -->
+    <path
+        android:fillColor="@color/ic_fg"
+        android:pathData="M54,30c-5,0 -9,4 -9,9v15c0,5 4,9 9,9s9,-4 9,-9V39c0,-5 -4,-9 -9,-9z" />
+    <path
+        android:fillColor="@color/ic_fg"
+        android:pathData="M69,54h-4c0,6.1 -4.9,11 -11,11s-11,-4.9 -11,-11h-4c0,7.6 5.7,13.9 13,14.9V76h4v-7.1C63.3,67.9 69,61.6 69,54z" />
+</vector>
