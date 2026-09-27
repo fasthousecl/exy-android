@@ -20,25 +20,24 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import ai.picovoice.porcupine.PorcupineActivationException
-import ai.picovoice.porcupine.PorcupineActivationLimitException
-import ai.picovoice.porcupine.PorcupineActivationRefusedException
-import ai.picovoice.porcupine.PorcupineActivationThrottledException
-import ai.picovoice.porcupine.PorcupineException
-import ai.picovoice.porcupine.PorcupineInvalidArgumentException
-import ai.picovoice.porcupine.PorcupineKeyException
-import ai.picovoice.porcupine.PorcupineManager
+import org.vosk.LibVosk
+import org.vosk.LogLevel
+import org.vosk.Model
+import org.vosk.Recognizer
+import org.vosk.android.RecognitionListener
+import org.vosk.android.SpeechService
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Servicio en primer plano que mantiene a Porcupine escuchando la palabra clave.
+ * Servicio en primer plano que mantiene a Vosk escuchando "oye exi".
  *
- * Todo lo que toca a Porcupine (crear, iniciar, detener, liberar) corre en un
- * único hilo de trabajo, en orden. El estado y la notificación se manejan en el
- * hilo principal. [generation] invalida resultados viejos: si el usuario pausa
- * mientras Porcupine se está iniciando, el inicio se descarta.
+ * Todo lo que toca a Vosk (cargar el modelo, abrir y cerrar el micrófono) corre
+ * en un único hilo de trabajo, en orden. El estado y la notificación se manejan
+ * en el hilo principal, que es también donde Vosk entrega sus resultados.
+ * [generation] invalida resultados viejos: si el usuario pausa mientras la
+ * escucha se está iniciando, ese inicio se descarta.
  */
 class WakeWordService : Service() {
 
@@ -47,16 +46,23 @@ class WakeWordService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
 
-    /** Solo se lee y escribe desde [worker]. */
-    private var manager: PorcupineManager? = null
+    /** Solo se leen y escriben desde [worker]. El modelo se carga una vez y se reutiliza. */
+    private var model: Model? = null
+    private var recognizer: Recognizer? = null
+    private var speech: SpeechService? = null
 
-    /** Solo se usa desde el hilo principal. */
+    /** Solo se usan desde el hilo principal. */
     private var generation = 0
     private var inForeground = false
     private var resumeAtWall = 0L
     private var wakeLock: PowerManager.WakeLock? = null
 
     private val resumeRunnable = Runnable { startListening() }
+
+    override fun onCreate() {
+        super.onCreate()
+        LibVosk.setLogLevel(LogLevel.WARNINGS)
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -84,7 +90,11 @@ class WakeWordService : Service() {
     override fun onDestroy() {
         generation++
         handler.removeCallbacksAndMessages(null)
-        worker.execute { releaseManager() }
+        worker.execute {
+            releaseMic()
+            model?.close()
+            model = null
+        }
         worker.shutdown()
         releaseWakeLock()
         inForeground = false
@@ -103,46 +113,71 @@ class WakeWordService : Service() {
             fail(getString(R.string.missing_config, missing.joinToString(", ")))
             return
         }
-        val accessKey = SecureStore(this).loadAccessKey()
-        if (accessKey.isNullOrBlank()) {
-            fail(getString(R.string.missing_config, getString(R.string.missing_key)))
-            return
-        }
 
         val token = ++generation
-        val keywordPath = ModelFile.KEYWORD.file(this).absolutePath
-        val modelPath = ModelFile.MODEL.file(this).absolutePath
-        val sensitivity = ExySettings(this).sensitivity
+        // Sensibilidad alta = se exige menos confianza a cada palabra.
+        val minConfidence = 1f - ExySettings(this).sensitivity
+        val listener = Listener(token, minConfidence)
         updateState(State.STARTING, null)
 
         worker.execute {
-            releaseManager()
+            releaseMic()
             try {
-                val m = PorcupineManager.Builder()
-                    .setAccessKey(accessKey)
-                    .setModelPath(modelPath)
-                    .setKeywordPath(keywordPath)
-                    .setSensitivity(sensitivity)
-                    .setErrorCallback { e -> handler.post { onRuntimeError(token, e) } }
-                    .build(applicationContext) { handler.post { onWakeWord(token) } }
-                manager = m
-                m.start()
+                val m = model ?: Model(VoskModel.prepare(applicationContext).absolutePath)
+                    .also { model = it }
+                val r = Recognizer(m, SAMPLE_RATE, WakePhrase.grammarJson).apply { setWords(true) }
+                recognizer = r
+                val s = SpeechService(r, SAMPLE_RATE)
+                speech = s
+                if (!s.startListening(listener)) throw IllegalStateException("la escucha ya estaba activa")
                 handler.post {
                     if (token == generation) {
                         acquireWakeLock()
                         updateState(State.LISTENING, null)
                     }
                 }
-            } catch (e: PorcupineException) {
-                Log.e(TAG, "No se pudo iniciar Porcupine", e)
-                releaseManager()
+            } catch (e: Exception) {
+                Log.e(TAG, "No se pudo iniciar la escucha", e)
+                releaseMic()
                 handler.post { if (token == generation) fail(describe(e)) }
             }
         }
     }
 
-    private fun onWakeWord(token: Int) {
-        if (token != generation || state != State.LISTENING) return
+    /** Recibe los resultados de Vosk en el hilo principal. */
+    private inner class Listener(
+        private val token: Int,
+        private val minConfidence: Float,
+    ) : RecognitionListener {
+
+        override fun onResult(hypothesis: String) = handleResult(hypothesis)
+
+        override fun onFinalResult(hypothesis: String) = handleResult(hypothesis)
+
+        override fun onPartialResult(hypothesis: String) = Unit
+
+        override fun onError(exception: Exception) = onRuntimeError(token, exception)
+
+        override fun onTimeout() = Unit
+
+        private fun handleResult(hypothesis: String) {
+            if (token != generation || state != State.LISTENING) return
+            val heard = try {
+                WakePhrase.heardText(hypothesis)
+            } catch (e: Exception) {
+                null
+            } ?: return
+            lastHeard = heard
+            val matched = try {
+                WakePhrase.match(hypothesis, minConfidence)
+            } catch (e: Exception) {
+                null
+            }
+            if (matched != null) onWakeWord() else listeners.forEach { it() }
+        }
+    }
+
+    private fun onWakeWord() {
         val next = ++generation
         val delayMs = ExySettings(this).resumeDelaySeconds * 1000L
 
@@ -154,7 +189,7 @@ class WakeWordService : Service() {
         // Primero soltar el micrófono, después abrir el asistente, para que el
         // asistente lo encuentre libre.
         worker.execute {
-            releaseManager()
+            releaseMic()
             handler.post {
                 if (next != generation) return@post
                 if (!AssistantLauncher.launch(this)) {
@@ -166,11 +201,11 @@ class WakeWordService : Service() {
     }
 
     /** Error en plena escucha (por ejemplo, otra app tomó el micrófono). Reintenta solo. */
-    private fun onRuntimeError(token: Int, e: PorcupineException) {
+    private fun onRuntimeError(token: Int, e: Exception) {
         if (token != generation) return
         Log.e(TAG, "Error durante la escucha", e)
         generation++
-        worker.execute { releaseManager() }
+        worker.execute { releaseMic() }
         releaseWakeLock()
         updateState(State.ERROR, getString(R.string.error_retry, describe(e)))
         handler.postDelayed(resumeRunnable, RETRY_DELAY_MS)
@@ -179,14 +214,14 @@ class WakeWordService : Service() {
     private fun pause() {
         generation++
         handler.removeCallbacks(resumeRunnable)
-        worker.execute { releaseManager() }
+        worker.execute { releaseMic() }
         releaseWakeLock()
         updateState(State.PAUSED, null)
     }
 
     private fun fail(message: String) {
         generation++
-        worker.execute { releaseManager() }
+        worker.execute { releaseMic() }
         releaseWakeLock()
         updateState(State.ERROR, message)
     }
@@ -194,7 +229,7 @@ class WakeWordService : Service() {
     private fun shutdown() {
         generation++
         handler.removeCallbacks(resumeRunnable)
-        worker.execute { releaseManager() }
+        worker.execute { releaseMic() }
         releaseWakeLock()
         updateState(State.STOPPED, null, notify = false)
         if (inForeground) stopForeground(STOP_FOREGROUND_REMOVE)
@@ -202,16 +237,19 @@ class WakeWordService : Service() {
         stopSelf()
     }
 
-    /** Solo desde [worker]. Deja el micrófono libre. */
-    private fun releaseManager() {
-        val m = manager ?: return
-        manager = null
-        try {
-            m.stop()
-        } catch (e: PorcupineException) {
-            Log.w(TAG, "Error al detener Porcupine", e)
+    /** Solo desde [worker]. Cierra el micrófono; el modelo queda cargado. */
+    private fun releaseMic() {
+        speech?.let {
+            try {
+                it.stop()
+                it.shutdown()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error al detener la escucha", e)
+            }
         }
-        m.delete()
+        speech = null
+        recognizer?.close()
+        recognizer = null
     }
 
     // ------------------------------------------------------- primer plano
@@ -330,21 +368,13 @@ class WakeWordService : Service() {
         wakeLock = null
     }
 
-    private fun describe(e: PorcupineException): String = when (e) {
-        is PorcupineActivationLimitException -> "la AccessKey alcanzó su límite de dispositivos"
-        is PorcupineActivationRefusedException -> "Picovoice rechazó la AccessKey"
-        is PorcupineActivationThrottledException -> "demasiados intentos, espera un rato"
-        is PorcupineActivationException -> "no se pudo validar la AccessKey (¿hay internet?)"
-        is PorcupineKeyException -> "la AccessKey no es válida"
-        is PorcupineInvalidArgumentException ->
-            "el .ppn y el .pv no son compatibles (deben ser del mismo idioma y versión)"
-        else -> e.message ?: e.javaClass.simpleName
-    }
+    private fun describe(e: Exception): String = e.message ?: e.javaClass.simpleName
 
     companion object {
         private const val TAG = "Exy"
         private const val NOTIFICATION_ID = 1
         private const val RETRY_DELAY_MS = 15_000L
+        private const val SAMPLE_RATE = 16_000f
 
         const val ACTION_START = "cl.exy.app.START"
         const val ACTION_PAUSE = "cl.exy.app.PAUSE"
@@ -358,6 +388,11 @@ class WakeWordService : Service() {
 
         @Volatile
         var lastMessage: String? = null
+            private set
+
+        /** Lo último que Vosk entendió (sin "[unk]"), para ajustar la sensibilidad. */
+        @Volatile
+        var lastHeard: String? = null
             private set
 
         private val listeners = CopyOnWriteArraySet<() -> Unit>()
@@ -383,9 +418,6 @@ class WakeWordService : Service() {
 
         /** Lo que falta para poder escuchar, en palabras para el usuario. */
         fun missingConfig(context: Context): List<String> = buildList {
-            if (!SecureStore(context).hasAccessKey()) add(context.getString(R.string.missing_key))
-            if (!ModelFile.KEYWORD.exists(context)) add(context.getString(R.string.missing_ppn))
-            if (!ModelFile.MODEL.exists(context)) add(context.getString(R.string.missing_pv))
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED
             ) {

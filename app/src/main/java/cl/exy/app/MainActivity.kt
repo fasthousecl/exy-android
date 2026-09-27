@@ -8,13 +8,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.text.format.Formatter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import cl.exy.app.databinding.ActivityMainBinding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
@@ -23,19 +21,9 @@ import kotlin.math.roundToInt
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var secureStore: SecureStore
     private lateinit var settings: ExySettings
 
     private val serviceListener: () -> Unit = { renderStatus() }
-
-    /** Qué archivo se está importando en este momento. */
-    private var pendingImport: ModelFile? = null
-
-    private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val type = pendingImport ?: return@registerForActivityResult
-        pendingImport = null
-        if (uri != null) importFile(uri, type)
-    }
 
     private val requestMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
@@ -51,12 +39,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        secureStore = SecureStore(this)
         settings = ExySettings(this)
 
         setupService()
-        setupAccessKey()
-        setupFiles()
         setupSliders()
         setupPermissions()
         binding.txtVersion.text = getString(R.string.version, BuildConfig.VERSION_NAME)
@@ -79,8 +64,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderAll() {
         renderStatus()
-        renderAccessKey()
-        renderFiles()
         renderPermissions()
     }
 
@@ -128,86 +111,12 @@ class MainActivity : AppCompatActivity() {
             ""
         }
         binding.txtStatus.text = text + extra
+        binding.txtLastHeard.text = WakeWordService.lastHeard
+            ?.let { getString(R.string.last_heard, it) }
+            ?: getString(R.string.last_heard_none)
         binding.btnStartStop.setText(
             if (WakeWordService.isRunning) R.string.btn_stop else R.string.btn_start,
         )
-    }
-
-    // ---------------------------------------------------------- AccessKey
-
-    private fun setupAccessKey() {
-        binding.btnSaveKey.setOnClickListener {
-            val value = binding.editAccessKey.text?.toString()?.trim().orEmpty()
-            if (value.isEmpty()) {
-                toast(getString(R.string.key_empty))
-                return@setOnClickListener
-            }
-            try {
-                secureStore.saveAccessKey(value)
-                binding.editAccessKey.text = null
-                toast(getString(R.string.key_saved))
-                WakeWordService.send(this, WakeWordService.ACTION_RELOAD)
-            } catch (e: Exception) {
-                toast(getString(R.string.key_error, e.message ?: e.javaClass.simpleName))
-            }
-            renderAccessKey()
-        }
-
-        binding.btnDeleteKey.setOnClickListener {
-            secureStore.clearAccessKey()
-            renderAccessKey()
-        }
-    }
-
-    private fun renderAccessKey() {
-        val saved = secureStore.hasAccessKey()
-        binding.txtKeyStatus.setText(if (saved) R.string.key_saved else R.string.key_missing)
-        binding.txtKeyStatus.setTextColor(color(if (saved) R.color.exy_ok else R.color.exy_warn))
-        binding.btnDeleteKey.isVisible = saved
-    }
-
-    // ------------------------------------------------------------ archivos
-
-    private fun setupFiles() {
-        binding.btnImportPpn.setOnClickListener { pick(ModelFile.KEYWORD) }
-        binding.btnImportPv.setOnClickListener { pick(ModelFile.MODEL) }
-    }
-
-    private fun pick(type: ModelFile) {
-        pendingImport = type
-        // Los .ppn y .pv no tienen tipo MIME conocido, así que se aceptan todos
-        // y se valida la extensión al importar.
-        pickFile.launch(arrayOf("*/*"))
-    }
-
-    private fun importFile(uri: Uri, type: ModelFile) {
-        try {
-            ModelFiles.import(this, uri, type)
-            toast(getString(R.string.import_ok))
-            WakeWordService.send(this, WakeWordService.ACTION_RELOAD)
-        } catch (e: IllegalArgumentException) {
-            toast(e.message.orEmpty())
-        } catch (e: Exception) {
-            toast(getString(R.string.import_error, e.message ?: e.javaClass.simpleName))
-        }
-        renderFiles()
-    }
-
-    private fun renderFiles() {
-        renderFile(ModelFile.KEYWORD, binding.txtPpn)
-        renderFile(ModelFile.MODEL, binding.txtPv)
-    }
-
-    private fun renderFile(type: ModelFile, view: android.widget.TextView) {
-        if (type.exists(this)) {
-            val name = ModelFiles.originalName(this, type) ?: type.fileName
-            val size = Formatter.formatShortFileSize(this, type.file(this).length())
-            view.text = getString(R.string.file_ok, name, size)
-            view.setTextColor(color(R.color.exy_ok))
-        } else {
-            view.setText(R.string.file_missing)
-            view.setTextColor(color(R.color.exy_warn))
-        }
     }
 
     // -------------------------------------------------------------- ajustes
@@ -223,7 +132,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(slider: Slider) = Unit
             override fun onStopTrackingTouch(slider: Slider) {
                 settings.sensitivity = slider.value
-                // La sensibilidad se fija al crear Porcupine: hay que reiniciarlo.
+                // La confianza mínima se fija al iniciar la escucha: hay que reiniciarla.
                 WakeWordService.send(this@MainActivity, WakeWordService.ACTION_RELOAD)
             }
         })
@@ -311,8 +220,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     // -------------------------------------------------------------- utilidades
-
-    private fun color(id: Int) = ContextCompat.getColor(this, id)
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 }

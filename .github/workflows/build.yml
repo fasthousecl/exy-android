@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # Modelo pequeño de Vosk en español: https://alphacephei.com/vosk/models
+  VOSK_MODEL: vosk-model-small-es-0.42
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: false
@@ -27,6 +31,39 @@ jobs:
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v5
+
+      - name: Caché del modelo de voz
+        uses: actions/cache@v4
+        with:
+          path: ~/vosk/${{ env.VOSK_MODEL }}
+          key: ${{ env.VOSK_MODEL }}
+
+      - name: Descargar modelo de voz en español
+        run: |
+          set -euo pipefail
+          if [ ! -f "$HOME/vosk/$VOSK_MODEL/am/final.mdl" ]; then
+            mkdir -p "$HOME/vosk"
+            curl -fsSL --retry 4 -o /tmp/model.zip "https://alphacephei.com/vosk/models/$VOSK_MODEL.zip"
+            unzip -q /tmp/model.zip -d "$HOME/vosk"
+          fi
+          DEST=app/src/main/assets/model-es
+          rm -rf "$DEST"
+          mkdir -p app/src/main/assets
+          cp -r "$HOME/vosk/$VOSK_MODEL" "$DEST"
+          # La app solo vuelve a copiar el modelo al teléfono si este valor cambia.
+          echo "$VOSK_MODEL" > "$DEST/uuid"
+          du -sh "$DEST"
+
+          # Informativo: qué variantes de "exi" conoce el modelo. Las que no
+          # estén, Vosk las descarta de la gramática sin fallar.
+          echo "Variantes presentes en el vocabulario:"
+          for w in oye oie olle oy hoy hey ey exi exy eksi ecsi exis equis sexy sexi éxi ex si eks i; do
+            if grep -aqx -- "$w" <(strings -n 1 "$DEST"/graph/Gr.fst 2>/dev/null || true); then
+              echo "  ✓ $w"
+            else
+              echo "  ✗ $w"
+            fi
+          done
 
       - name: Compilar APK debug
         run: ./gradlew --no-daemon assembleDebug

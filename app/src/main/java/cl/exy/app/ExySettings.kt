@@ -2,7 +2,7 @@ package cl.exy.app
 
 import android.content.Context
 
-/** Ajustes no sensibles. La AccessKey va aparte, cifrada, en [SecureStore]. */
+/** Ajustes de la escucha, en preferencias privadas de la app. */
 class ExySettings(context: Context) {
 
     private val prefs = context.getSharedPreferences("exy_settings", Context.MODE_PRIVATE)

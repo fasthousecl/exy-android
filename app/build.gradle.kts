@@ -17,6 +17,12 @@ android {
         targetSdk = 36
         versionCode = runNumber
         versionName = "1.0.$runNumber"
+
+        // Vosk trae librerías nativas para 4 arquitecturas; los teléfonos reales
+        // solo usan ARM. Así el APK pesa bastante menos.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     signingConfigs {
@@ -56,7 +62,10 @@ kotlin {
 }
 
 dependencies {
-    implementation("ai.picovoice:porcupine-android:4.0.2")
+    // Reconocimiento de voz sin conexión. El modelo en español (assets/model-es)
+    // lo descarga el CI; ver .github/workflows/build.yml.
+    implementation("com.alphacephei:vosk-android:0.3.75@aar")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.12.0")

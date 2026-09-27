@@ -5,7 +5,7 @@
     <!-- Notificación -->
     <string name="channel_name">Escucha de Exy</string>
     <string name="channel_desc">Aviso fijo mientras Exy escucha la palabra clave</string>
-    <string name="notif_listening">Escuchando la palabra clave</string>
+    <string name="notif_listening">Escuchando «Oye Exi»</string>
     <string name="notif_paused">En pausa: el micrófono está libre</string>
     <string name="notif_starting">Preparando la escucha…</string>
     <string name="notif_cooldown">Asistente abierto. Vuelvo a escuchar en</string>
@@ -15,9 +15,8 @@
     <string name="action_stop">Detener</string>
 
     <!-- Pantalla principal -->
+    <string name="intro">Di «Oye Exi» y Exy abrirá tu asistente de voz. El reconocimiento funciona sin internet, dentro del teléfono.</string>
     <string name="section_service">Servicio</string>
-    <string name="section_access_key">AccessKey de Picovoice</string>
-    <string name="section_files">Archivos del modelo</string>
     <string name="section_tuning">Ajustes</string>
     <string name="section_permissions">Permisos</string>
 
@@ -28,28 +27,14 @@
     <string name="status_cooldown">Asistente abierto, esperando para reanudar</string>
     <string name="status_error">Error: %1$s</string>
 
+    <string name="last_heard">Último que escuché: «%1$s»</string>
+    <string name="last_heard_none">Todavía no he escuchado nada</string>
     <string name="btn_start">Iniciar escucha</string>
     <string name="btn_stop">Detener</string>
     <string name="btn_test_assistant">Probar asistente</string>
 
-    <string name="hint_access_key">Pega aquí tu AccessKey</string>
-    <string name="btn_save_key">Guardar clave</string>
-    <string name="btn_delete_key">Borrar</string>
-    <string name="key_saved">AccessKey guardada (cifrada en el teléfono)</string>
-    <string name="key_missing">Sin AccessKey guardada</string>
-    <string name="key_empty">La clave está vacía</string>
-    <string name="key_error">No se pudo cifrar la clave: %1$s</string>
-
-    <string name="btn_import_ppn">Importar palabra clave (.ppn)</string>
-    <string name="btn_import_pv">Importar modelo en español (.pv)</string>
-    <string name="file_ok">%1$s (%2$s)</string>
-    <string name="file_missing">No importado</string>
-    <string name="import_ok">Archivo importado</string>
-    <string name="import_wrong_ext">El archivo debe terminar en %1$s</string>
-    <string name="import_error">No se pudo importar: %1$s</string>
-
     <string name="label_sensitivity">Sensibilidad: %1$.2f</string>
-    <string name="help_sensitivity">Más alta detecta mejor pero se equivoca más seguido.</string>
+    <string name="help_sensitivity">Más alta acepta la frase aunque Exy no la haya entendido con total seguridad: detecta más, pero se equivoca más seguido.</string>
     <string name="label_resume_delay">Reanudar escucha tras: %1$d s</string>
     <string name="help_resume_delay">Tiempo que el micrófono queda libre para el asistente.</string>
 
@@ -62,9 +47,6 @@
     <string name="perm_denied_forever">Ábrelo en Ajustes del sistema para concederlo.</string>
 
     <string name="missing_config">Falta configurar: %1$s</string>
-    <string name="missing_key">AccessKey</string>
-    <string name="missing_ppn">archivo .ppn</string>
-    <string name="missing_pv">modelo .pv</string>
     <string name="missing_mic">permiso de micrófono</string>
     <string name="error_retry">%1$s. Reintento en unos segundos.</string>
     <string name="version">Versión %1$s</string>

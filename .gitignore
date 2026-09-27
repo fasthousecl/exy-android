@@ -13,11 +13,10 @@ captures/
 *.jks
 release.keystore
 
-# Archivos de Picovoice: se importan desde la app, jamás se versionan
-*.ppn
-*.pv
-**/assets/*.ppn
-**/assets/*.pv
+# Modelo de voz de Vosk: lo descarga el CI en cada compilación (~40 MB)
+app/src/main/assets/model-es/
+vosk-model-*/
+vosk-model-*.zip
 
 # Claves y secretos
 .env

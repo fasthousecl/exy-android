@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nada se respalda ni se copia a otro equipo: la AccessKey va cifrada con una
-     llave del Keystore que no sale del teléfono, así que restaurarla en otro
-     aparato no serviría de nada. -->
+<!-- Nada se respalda ni se copia a otro equipo: los ajustes son mínimos y el
+     modelo de voz ya viene dentro del APK. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />
