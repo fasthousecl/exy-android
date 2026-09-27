@@ -54,16 +54,12 @@ jobs:
           echo "$VOSK_MODEL" > "$DEST/uuid"
           du -sh "$DEST"
 
-          # Informativo: qué variantes de "exi" conoce el modelo. Las que no
-          # estén, Vosk las descarta de la gramática sin fallar.
-          echo "Variantes presentes en el vocabulario:"
-          for w in oye oie olle oy hoy hey ey exi exy eksi ecsi exis equis sexy sexi éxi ex si eks i; do
-            if grep -aqx -- "$w" <(strings -n 1 "$DEST"/graph/Gr.fst 2>/dev/null || true); then
-              echo "  ✓ $w"
-            else
-              echo "  ✗ $w"
-            fi
-          done
+      - name: Revisar comandos de voz contra el modelo
+        run: |
+          # espeak-ng es solo para la prueba informativa con voz sintética.
+          (sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng) > /dev/null || echo "Sin espeak-ng"
+          pip install -q vosk
+          python3 .github/scripts/revisar_comandos.py "$HOME/vosk/$VOSK_MODEL"
 
       - name: Compilar APK debug
         run: ./gradlew --no-daemon assembleDebug

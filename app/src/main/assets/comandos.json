@@ -1,0 +1,19 @@
+{
+  "_nota": "Frases que Exy reconoce. Todas las palabras deben existir en el vocabulario del modelo de Vosk; el CI avisa si falta alguna. Cada frase es: <oye> <exi> [<prefijo>] [<destino>]. Sin destino abre el favorito (Gemini).",
+  "oye": ["oye", "oie", "oy", "hoy", "ey"],
+  "exi": ["exi", "exis", "ex si", "ex i", "equis"],
+  "prefijos": ["vamos a", "vamos al", "abre", "ir a"],
+  "destinos": {
+    "claude_code": ["claude code", "cloud code", "clau code", "claude cod", "cloud cod", "claude código"],
+    "claude": ["claude", "cloud", "clau", "claudio"],
+    "chatgpt": ["chat ge pe te", "chat yipití", "chat gipití", "chat", "chad ge pe te"],
+    "gemini": ["gemini", "géminis", "gémini"]
+  },
+  "pruebas": {
+    "oye exi": "gemini",
+    "oye exi vamos a claude code": "claude_code",
+    "oye exi claude": "claude",
+    "oye exi chat ge pe te": "chatgpt",
+    "oye exi gemini": "gemini"
+  }
+}

@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import cl.exy.app.databinding.ActivityMainBinding
+import cl.exy.app.databinding.ItemComandoBinding
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import kotlin.math.roundToInt
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderAll() {
         renderStatus()
+        renderComandos()
         renderPermissions()
     }
 
@@ -89,9 +91,36 @@ class MainActivity : AppCompatActivity() {
             }
             WakeWordService.start(this)
         }
+    }
 
-        binding.btnTestAssistant.setOnClickListener {
-            if (!AssistantLauncher.launch(this)) toast(getString(R.string.no_assistant))
+    // ------------------------------------------------------ comandos de voz
+
+    private val comandos = listOf(
+        R.string.cmd_favorito to Destino.FAVORITO,
+        R.string.cmd_claude_code to Destino.CLAUDE_CODE,
+        R.string.cmd_claude to Destino.CLAUDE,
+        R.string.cmd_chatgpt to Destino.CHATGPT,
+    )
+
+    /** Una fila por comando, con el destino y si la app está instalada. */
+    private fun renderComandos() {
+        val lista = binding.listaComandos
+        lista.removeAllViews()
+        for ((frase, destino) in comandos) {
+            val fila = ItemComandoBinding.inflate(layoutInflater, lista, true)
+            val nombre = getString(destino.nombre)
+            fila.txtFrase.text = getString(R.string.comillas, getString(frase))
+            fila.txtDestino.text = when {
+                destino == Destino.CLAUDE_CODE -> getString(R.string.dest_claude_code_url)
+                destino == Destino.FAVORITO && destino.instalada(this) -> getString(R.string.dest_favorito, nombre)
+                destino == Destino.FAVORITO -> getString(R.string.dest_sin_app, nombre)
+                destino.instalada(this) -> getString(R.string.dest_app, nombre)
+                else -> getString(R.string.dest_web, nombre)
+            }
+            fila.btnProbar.contentDescription = getString(R.string.btn_probar) + " " + nombre
+            fila.btnProbar.setOnClickListener {
+                if (!destino.abrir(this)) toast(getString(R.string.no_se_pudo_abrir, nombre))
+            }
         }
     }
 

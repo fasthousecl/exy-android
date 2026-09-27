@@ -11,13 +11,21 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Para saber qué app responde a ACTION_VOICE_COMMAND / ACTION_ASSIST (Android 11+). -->
+    <!-- Android 11+ solo deja ver otras apps si se declaran aquí: las apps que
+         Exy abre y el asistente del sistema como respaldo de Gemini. -->
     <queries>
+        <package android:name="com.google.android.apps.bard" />
+        <package android:name="com.anthropic.claude" />
+        <package android:name="com.openai.chatgpt" />
         <intent>
             <action android:name="android.intent.action.VOICE_COMMAND" />
         </intent>
         <intent>
             <action android:name="android.intent.action.ASSIST" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
         </intent>
     </queries>
 

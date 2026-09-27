@@ -1,9 +1,21 @@
 # Exy
 
 Asistente de voz personalizado para Android. Exy escucha en segundo plano la
-frase **«Oye Exi»** y, al oírla, vibra, suelta el micrófono y abre el asistente
-de voz predeterminado del teléfono (Google Gemini/Assistant, Bixby, etc.).
+frase **«Oye Exi»** y, al oírla, vibra, suelta el micrófono y abre la app de IA
+que le pidas, sin tener que cambiar el asistente predeterminado del teléfono.
 Pasado un tiempo (60 s por defecto) vuelve a escuchar solo.
+
+| Dices | Abre |
+|---|---|
+| «Oye Exi» | **Gemini** (favorito) |
+| «Oye Exi, vamos a Claude Code» | **Claude Code** (claude.ai/code) |
+| «Oye Exi, Claude» | **Claude** |
+| «Oye Exi, ChatGPT» | **ChatGPT** |
+| «Oye Exi, Gemini» | **Gemini** |
+
+Dilo de corrido, sin pausa después de «Oye Exi»: si haces una pausa larga, Exy
+entiende solo «Oye Exi» y abre Gemini. Si una app no está instalada, se abre su
+versión web (Gemini sin app cae en el asistente del sistema).
 
 - Android 10 o superior (minSdk 29, targetSdk 36).
 - Reconocimiento **sin internet** con [Vosk](https://alphacephei.com/vosk/) y su
@@ -60,13 +72,9 @@ Bajo el estado, **"Último que escuché"** muestra lo que Vosk entendió. Sirve
 para ajustar: si dices «Oye Exi» y ahí aparece la frase pero no se activa,
 sube la sensibilidad; si se activa sola, bájala.
 
-Usa **Probar asistente** para comprobar qué asistente abre tu teléfono.
-
-### Elegir el asistente predeterminado
-
-Ajustes → **Aplicaciones** → **Elegir apps predeterminadas** → **Asistente
-digital** (en algunos modelos: *App de asistencia del dispositivo*) → elige
-**Google** / **Gemini** o **Bixby**.
+En **Comandos de voz** está la lista de frases, a qué app va cada una y si esa
+app está instalada. El botón **Probar** de cada fila abre la app para comprobar
+que funciona sin tener que hablar.
 
 ---
 
@@ -93,16 +101,22 @@ lo necesites.
 1. Un servicio en primer plano (tipo `microphone`) mantiene a Vosk escuchando.
    Todo el audio se procesa en el teléfono; la app ni siquiera pide permiso de
    internet.
-2. Vosk usa una **gramática restringida**: solo puede reconocer «oye exi», sus
-   variantes y «[unk]» (cualquier otra cosa). Como "exi" no es una palabra del
-   español, se aceptan las formas en que el modelo la oye: *exi, equis, sexy,
-   eksi, ex si*… precedidas de *oye, hoy, oy, hey*… (lista completa en
-   [`WakePhrase.kt`](app/src/main/java/cl/exy/app/WakePhrase.kt)). Además, cada
-   palabra debe superar una confianza mínima que fija el control de
+2. Vosk usa una **gramática restringida**: solo puede reconocer las frases de
+   [`comandos.json`](app/src/main/assets/comandos.json) y «[unk]» (cualquier
+   otra cosa). Cada frase es *oye + exi + [prefijo] + [destino]*. Como "exi" y
+   "ChatGPT" no son palabras del español, se aceptan las formas en que el modelo
+   las oye (*exi, exis, ex si, equis*; *chat ge pe te, chat yipití*…). Además,
+   cada palabra debe superar una confianza mínima que fija el control de
    sensibilidad.
 3. Al detectar la frase: vibración corta → Vosk se detiene y libera el
-   micrófono → se abre el asistente con `ACTION_VOICE_COMMAND` (si ninguna app lo
-   atiende, `ACTION_ASSIST`).
+   micrófono → se abre la app correspondiente.
+
+   | Destino | Qué abre | Si no está |
+   |---|---|---|
+   | Gemini | app `com.google.android.apps.bard` | asistente del sistema |
+   | Claude Code | `https://claude.ai/code` en la app de Claude | navegador |
+   | Claude | app `com.anthropic.claude` | claude.ai |
+   | ChatGPT | app `com.openai.chatgpt` | chatgpt.com |
 4. La notificación muestra la cuenta regresiva; al terminar, Exy vuelve a
    escuchar. *Pausar* suelta el micrófono hasta que pulses *Reanudar*.
 5. Si otra app toma el micrófono (una llamada, por ejemplo), Exy reintenta solo
@@ -121,6 +135,9 @@ El workflow [`.github/workflows/build.yml`](.github/workflows/build.yml):
 - Descarga el modelo `vosk-model-small-es-0.42` desde alphacephei.com (queda en
   caché entre compilaciones), lo copia a `app/src/main/assets/model-es` y lo
   empaqueta dentro del APK. El modelo **no** está en el repositorio.
+- Revisa que todas las palabras de `comandos.json` existan en el vocabulario del
+  modelo (si falta una, la compilación falla con el nombre de la palabra) y
+  prueba las frases con voz sintética.
 - Compila el APK debug en **cada push** a cualquier rama y lo deja como
   artefacto en la pestaña **Actions**.
 - En cada push a **`main`**, además, crea un **GitHub Release** `v1.0.N` con el
@@ -133,11 +150,13 @@ El workflow [`.github/workflows/build.yml`](.github/workflows/build.yml):
 app/src/main/java/cl/exy/app/
 ├── ExyApp.kt             # Canal de notificación
 ├── MainActivity.kt       # Pantalla de configuración y permisos
-├── AssistantLauncher.kt  # Abre el asistente predeterminado
+├── Destino.kt            # Las apps que Exy abre (Gemini, Claude, ChatGPT…)
 ├── WakeWordService.kt    # Servicio en primer plano con Vosk
-├── WakePhrase.kt         # Gramática y variantes de «oye exi»
+├── Comandos.kt           # Gramática y detección de «oye exi» + comando
 ├── VoskModel.kt          # Copia el modelo del APK a almacenamiento interno
 └── ExySettings.kt        # Sensibilidad y tiempo de reanudación
+
+app/src/main/assets/comandos.json   # Frases y variantes que Exy reconoce
 ```
 
 ### Compilar en un computador (opcional)

@@ -39,28 +39,28 @@
             style="@style/Exy.Help"
             android:layout_marginTop="4dp" />
 
-        <LinearLayout
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartStop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal">
+            android:text="@string/btn_start" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnStartStop"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/btn_start" />
+        <!-- Comandos de voz: las filas se agregan desde MainActivity -->
+        <TextView
+            style="@style/Exy.Section"
+            android:text="@string/section_comandos" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnTestAssistant"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/btn_test_assistant" />
-        </LinearLayout>
+        <TextView
+            style="@style/Exy.Help"
+            android:layout_marginBottom="4dp"
+            android:text="@string/help_comandos" />
+
+        <LinearLayout
+            android:id="@+id/listaComandos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
         <!-- Ajustes -->
         <TextView

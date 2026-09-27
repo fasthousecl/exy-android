@@ -31,7 +31,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Servicio en primer plano que mantiene a Vosk escuchando "oye exi".
+ * Servicio en primer plano que mantiene a Vosk escuchando «oye exi» y sus
+ * comandos (ver [Comandos]), y abre la app que corresponda.
  *
  * Todo lo que toca a Vosk (cargar el modelo, abrir y cerrar el micrófono) corre
  * en un único hilo de trabajo, en orden. El estado y la notificación se manejan
@@ -125,7 +126,8 @@ class WakeWordService : Service() {
             try {
                 val m = model ?: Model(VoskModel.prepare(applicationContext).absolutePath)
                     .also { model = it }
-                val r = Recognizer(m, SAMPLE_RATE, WakePhrase.grammarJson).apply { setWords(true) }
+                val gramatica = Comandos.cargar(applicationContext).gramatica
+                val r = Recognizer(m, SAMPLE_RATE, gramatica).apply { setWords(true) }
                 recognizer = r
                 val s = SpeechService(r, SAMPLE_RATE)
                 speech = s
@@ -163,37 +165,39 @@ class WakeWordService : Service() {
         private fun handleResult(hypothesis: String) {
             if (token != generation || state != State.LISTENING) return
             val heard = try {
-                WakePhrase.heardText(hypothesis)
+                Comandos.textoOido(hypothesis)
             } catch (e: Exception) {
                 null
             } ?: return
             lastHeard = heard
-            val matched = try {
-                WakePhrase.match(hypothesis, minConfidence)
+            val deteccion = try {
+                Comandos.cargar(this@WakeWordService).detectar(hypothesis, minConfidence)
             } catch (e: Exception) {
+                Log.w(TAG, "Resultado de Vosk inválido: $hypothesis", e)
                 null
             }
-            if (matched != null) onWakeWord() else listeners.forEach { it() }
+            if (deteccion != null) onWakeWord(deteccion.destino) else listeners.forEach { it() }
         }
     }
 
-    private fun onWakeWord() {
+    private fun onWakeWord(destino: Destino) {
         val next = ++generation
         val delayMs = ExySettings(this).resumeDelaySeconds * 1000L
 
         vibrate()
         releaseWakeLock()
         resumeAtWall = System.currentTimeMillis() + delayMs
+        lastDestino = destino
         updateState(State.COOLDOWN, null)
 
-        // Primero soltar el micrófono, después abrir el asistente, para que el
+        // Primero soltar el micrófono, después abrir la app, para que el
         // asistente lo encuentre libre.
         worker.execute {
             releaseMic()
             handler.post {
                 if (next != generation) return@post
-                if (!AssistantLauncher.launch(this)) {
-                    updateState(State.COOLDOWN, getString(R.string.no_assistant))
+                if (!destino.abrir(this)) {
+                    updateState(State.COOLDOWN, getString(R.string.no_se_pudo_abrir, getString(destino.nombre)))
                 }
                 handler.postDelayed(resumeRunnable, delayMs)
             }
@@ -310,7 +314,8 @@ class WakeWordService : Service() {
             State.STOPPED, State.STARTING -> getString(R.string.notif_starting)
             State.LISTENING -> getString(R.string.notif_listening)
             State.PAUSED -> getString(R.string.notif_paused)
-            State.COOLDOWN -> lastMessage ?: getString(R.string.notif_cooldown)
+            State.COOLDOWN -> lastMessage
+                ?: getString(R.string.notif_cooldown, getString((lastDestino ?: Destino.FAVORITO).nombre))
             State.ERROR -> getString(R.string.notif_error, lastMessage.orEmpty())
         }
         builder.setContentText(text)
@@ -388,6 +393,11 @@ class WakeWordService : Service() {
 
         @Volatile
         var lastMessage: String? = null
+            private set
+
+        /** La última app que Exy abrió. */
+        @Volatile
+        var lastDestino: Destino? = null
             private set
 
         /** Lo último que Vosk entendió (sin "[unk]"), para ajustar la sensibilidad. */
