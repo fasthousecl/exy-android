@@ -23,7 +23,7 @@ debiles = [f"{o} {e}" for o in c["oye"] for e in c.get("exi_debil", [])]
 destinos = [d for lista in c["destinos"].values() for d in lista]
 atajos = c.get("atajos", {})
 ordenes = list(dict.fromkeys(destinos + [f"{p} {d}" for p in c["prefijos"] for d in destinos] + list(atajos)))
-gramatica = activaciones + [f"{a} {o}" for a in activaciones + debiles for o in ordenes] + c["oye"] + ["[unk]"]
+gramatica = activaciones + [f"{a} {o}" for a in activaciones for o in ordenes] + c["oye"] + ["[unk]"]
 destino_de = {d: id_ for id_, lista in c["destinos"].items() for d in lista}
 
 

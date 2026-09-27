@@ -1,5 +1,5 @@
 {
-  "_nota": "Frases que Exy reconoce. Todas las palabras deben existir en el vocabulario del modelo de Vosk; el CI avisa si falta alguna. Cada frase es: <oye> <exi> [<prefijo>] [<destino>], o <oye> <exi> <atajo>. Sin destino abre el favorito (Gemini). Los atajos se revisan antes que los destinos. 'exi_debil' son formas de 'exi' demasiado comunes en el habla (\"oye, sí\"): solo activan si van seguidas de un destino o atajo, nunca solas.",
+  "_nota": "Frases que Exy reconoce. Todas las palabras deben existir en el vocabulario del modelo de Vosk; el CI avisa si falta alguna. Cada frase es: <oye> <exi> [<prefijo>] [<destino>], o <oye> <exi> <atajo>. Sin destino abre el favorito (Gemini). Los atajos se revisan antes que los destinos. 'exi_debil' son formas de 'exi' demasiado comunes en el habla (\"oye, sí\"): solo activan si van seguidas de un destino o atajo, nunca solas. No se agregan a la gramática (empeora el reconocimiento de 'oye exi').",
   "oye": [
     "oye",
     "oie",

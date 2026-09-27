@@ -18,7 +18,11 @@ import org.json.JSONObject
 class Comandos private constructor(
     private val oye: List<String>,
     private val exi: List<String>,
-    /** Formas de "exi" demasiado comunes ("oye, sí"): solo valen seguidas de una orden. */
+    /**
+     * Formas de "exi" demasiado comunes ("oye, sí"): solo valen seguidas de una
+     * orden. No van en la gramática (con "si" dentro, Vosk empieza a oír «oye si»
+     * donde dijiste «oye exi»); solo se aceptan si Vosk igual las entrega.
+     */
     private val exiDebil: List<String>,
     private val prefijos: List<String>,
     /** Texto del destino (p. ej. "claude code") → destino. */
@@ -44,7 +48,7 @@ class Comandos private constructor(
      */
     val gramatica: String = JSONArray(
         activaciones +
-            (activaciones + activacionesDebiles).flatMap { a -> ordenes.map { o -> "$a $o" } } +
+            activaciones.flatMap { a -> ordenes.map { o -> "$a $o" } } +
             oye +
             "[unk]",
     ).toString()
