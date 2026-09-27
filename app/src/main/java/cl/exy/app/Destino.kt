@@ -15,7 +15,7 @@ import androidx.annotation.StringRes
  */
 enum class Destino(
     val id: String,
-    @StringRes val nombre: Int,
+    @param:StringRes val nombre: Int,
     private val paquete: String?,
     private val url: String?,
 ) {

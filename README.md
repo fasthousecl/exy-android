@@ -9,11 +9,12 @@ Pasado un tiempo (60 s por defecto) vuelve a escuchar solo.
 |---|---|
 | «Oye Exi» | **Gemini** (favorito) |
 | «Oye Exi, vamos a Claude Code» | **Claude Code** (claude.ai/code) |
-| «Oye Exi, Claude» | **Claude** |
+| «Oye Exi, Claude» o «Oye Exi, abre Claude» | **Claude** |
 | «Oye Exi, ChatGPT» | **ChatGPT** |
 | «Oye Exi, Gemini» | **Gemini** |
 
-Dilo de corrido, sin pausa después de «Oye Exi»: si haces una pausa larga, Exy
+«Vamos a Claude…» siempre va a Claude Code, aunque Exy no alcance a oír el
+"code". Dilo de corrido, sin pausa después de «Oye Exi»: si haces una pausa larga, Exy
 entiende solo «Oye Exi» y abre Gemini. Si una app no está instalada, se abre su
 versión web (Gemini sin app cae en el asistente del sistema).
 

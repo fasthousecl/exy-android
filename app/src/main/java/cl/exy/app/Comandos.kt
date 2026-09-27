@@ -21,6 +21,8 @@ class Comandos private constructor(
     private val prefijos: List<String>,
     /** Texto del destino (p. ej. "claude code") → destino. */
     private val destinos: Map<String, Destino>,
+    /** Órdenes completas que se revisan antes que los destinos ("vamos a claude" → Claude Code). */
+    private val atajos: Map<String, Destino>,
 ) {
 
     /** Resultado de reconocer una frase de activación. */
@@ -29,7 +31,7 @@ class Comandos private constructor(
     private val activaciones: List<String> = oye.flatMap { o -> exi.map { e -> "$o $e" } }
 
     private val ordenes: List<String> =
-        destinos.keys.toList() + prefijos.flatMap { p -> destinos.keys.map { d -> "$p $d" } }
+        (destinos.keys + prefijos.flatMap { p -> destinos.keys.map { d -> "$p $d" } } + atajos.keys).distinct()
 
     /**
      * Gramática para Vosk: cada activación sola o seguida de una orden, más las
@@ -81,7 +83,7 @@ class Comandos private constructor(
                 .firstOrNull { resto.startsWith("$it ") }
                 ?.let { resto.removePrefix("$it ") }
                 ?: resto
-            destino = destinos[orden] ?: return null
+            destino = atajos[resto] ?: destinos[orden] ?: return null
             usadas = palabras.subList(inicio, inicio + largo) + resto.split(' ')
         }
 
@@ -122,11 +124,16 @@ class Comandos private constructor(
                 val destino = Destino.porId(id) ?: continue
                 porId.getJSONArray(id).strings().forEach { destinos[it] = destino }
             }
+            val atajos = mutableMapOf<String, Destino>()
+            json.optJSONObject("atajos")?.let { a ->
+                for (frase in a.keys()) Destino.porId(a.getString(frase))?.let { atajos[frase] = it }
+            }
             return Comandos(
                 oye = json.getJSONArray("oye").strings(),
                 exi = json.getJSONArray("exi").strings(),
                 prefijos = json.getJSONArray("prefijos").strings(),
                 destinos = destinos,
+                atajos = atajos,
             )
         }
 

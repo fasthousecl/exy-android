@@ -1,18 +1,63 @@
 {
-  "_nota": "Frases que Exy reconoce. Todas las palabras deben existir en el vocabulario del modelo de Vosk; el CI avisa si falta alguna. Cada frase es: <oye> <exi> [<prefijo>] [<destino>]. Sin destino abre el favorito (Gemini).",
-  "oye": ["oye", "oie", "oy", "hoy", "ey"],
-  "exi": ["exi", "exis", "ex si", "ex i", "equis"],
-  "prefijos": ["vamos a", "vamos al", "abre", "ir a"],
+  "_nota": "Frases que Exy reconoce. Todas las palabras deben existir en el vocabulario del modelo de Vosk; el CI avisa si falta alguna. Cada frase es: <oye> <exi> [<prefijo>] [<destino>], o <oye> <exi> <atajo>. Sin destino abre el favorito (Gemini). Los atajos se revisan antes que los destinos.",
+  "oye": [
+    "oye",
+    "oie",
+    "oy",
+    "hoy",
+    "ey"
+  ],
+  "exi": [
+    "exi",
+    "exis",
+    "ex si",
+    "ex i",
+    "equis"
+  ],
+  "prefijos": [
+    "vamos a",
+    "vamos al",
+    "abre",
+    "ir a"
+  ],
   "destinos": {
-    "claude_code": ["claude code", "cloud code", "clau code", "claude cod", "cloud cod", "claude código"],
-    "claude": ["claude", "cloud", "clau", "claudio"],
-    "chatgpt": ["chat ge pe te", "chat ji pi ti", "chat", "chad ge pe te"],
-    "gemini": ["gemini", "géminis"]
+    "claude_code": [
+      "claude code",
+      "cloud code",
+      "clau code",
+      "claude cod",
+      "cloud cod",
+      "claude código"
+    ],
+    "claude": [
+      "claude",
+      "cloud",
+      "clau",
+      "claudio"
+    ],
+    "chatgpt": [
+      "chat ge pe te",
+      "chat ji pi ti",
+      "chat",
+      "chad ge pe te"
+    ],
+    "gemini": [
+      "gemini",
+      "géminis"
+    ]
+  },
+  "atajos": {
+    "vamos a claude": "claude_code",
+    "vamos a cloud": "claude_code",
+    "vamos a clau": "claude_code",
+    "vamos al cloud": "claude_code"
   },
   "pruebas": {
     "oye exi": "gemini",
     "oye exi vamos a claude code": "claude_code",
+    "oye exi vamos a cloud code": "claude_code",
     "oye exi claude": "claude",
+    "oye exi abre claude": "claude",
     "oye exi chat ge pe te": "chatgpt",
     "oye exi gemini": "gemini"
   }

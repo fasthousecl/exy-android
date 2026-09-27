@@ -20,8 +20,29 @@ c = json.load(open(COMANDOS, encoding="utf-8"))
 # Misma gramática que Comandos.kt
 activaciones = [f"{o} {e}" for o in c["oye"] for e in c["exi"]]
 destinos = [d for lista in c["destinos"].values() for d in lista]
-ordenes = destinos + [f"{p} {d}" for p in c["prefijos"] for d in destinos]
+atajos = c.get("atajos", {})
+ordenes = list(dict.fromkeys(destinos + [f"{p} {d}" for p in c["prefijos"] for d in destinos] + list(atajos)))
 gramatica = activaciones + [f"{a} {o}" for a in activaciones for o in ordenes] + c["oye"] + ["[unk]"]
+destino_de = {d: id_ for id_, lista in c["destinos"].items() for d in lista}
+
+
+def rutear(texto):
+    """Misma lógica que Comandos.detectar() (sin la confianza)."""
+    palabras = texto.split()
+    for i in range(len(palabras)):
+        for a in activaciones:
+            partes = a.split()
+            if palabras[i:i + len(partes)] == partes:
+                resto = " ".join(w for w in palabras[i + len(partes):] if w != "[unk]")
+                if not resto:
+                    return "gemini"
+                orden = resto
+                for p in sorted(c["prefijos"], key=len, reverse=True):
+                    if resto.startswith(p + " "):
+                        orden = resto[len(p) + 1:]
+                        break
+                return atajos.get(resto) or destino_de.get(orden)
+    return None
 palabras = sorted({w for frase in gramatica if frase != "[unk]" for w in frase.split()})
 print(f"Gramática: {len(gramatica)} frases, {len(palabras)} palabras distintas")
 
@@ -74,7 +95,9 @@ def probar(frase, esperado):
 
     con = reconocer(json.dumps(gramatica, ensure_ascii=False))
     libre = reconocer(None)
-    print(f"  «{frase}» ({esperado}) → con gramática: «{con}» | sin gramática: «{libre}»")
+    ruta = rutear(con)
+    marca = "✓" if ruta == esperado else "✗"
+    print(f"  {marca} «{frase}» → entendió «{con}» → abre {ruta} (esperado {esperado}) | sin gramática: «{libre}»")
 
 
 print("Prueba con voz sintética (informativa):")

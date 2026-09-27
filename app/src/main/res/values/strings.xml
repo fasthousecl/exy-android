@@ -58,7 +58,7 @@
     <string name="comillas">«%1$s»</string>
     <string name="cmd_favorito">Oye Exi</string>
     <string name="cmd_claude_code">Oye Exi, vamos a Claude Code</string>
-    <string name="cmd_claude">Oye Exi, Claude</string>
+    <string name="cmd_claude">Oye Exi, abre Claude</string>
     <string name="cmd_chatgpt">Oye Exi, ChatGPT</string>
     <string name="dest_gemini">Gemini</string>
     <string name="dest_claude_code">Claude Code</string>
