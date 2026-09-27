@@ -50,32 +50,37 @@ configuración: todas se firman con la misma llave de depuración.
 
 ## 2. Configurar Exy
 
-Abre **Exy** y, de arriba a abajo:
+Abre **Exy**. La pantalla muestra al centro la X del logo con el estado actual:
+apagada (gris), **escuchando** (menta, con un halo que respira) o, después de
+abrir una app, un anillo que cuenta el tiempo hasta volver a escuchar.
 
-1. **Permisos**: pulsa **Conceder** en cada uno.
-   - **Micrófono** → *Mientras se usa la app*.
-   - **Notificaciones** → *Permitir*. La notificación fija es la que mantiene a
-     Exy activo y trae los botones *Pausar / Reanudar* y *Detener*.
-   - **Mostrar sobre otras apps** → busca **Exy** y actívalo. Sin esto Android
-     no deja abrir el asistente desde segundo plano.
-   - **Sin optimización de batería** → *Permitir*.
-2. **Ajustes**:
-   - **Sensibilidad** (0 a 1): más alta acepta la frase aunque Exy no esté del
-     todo seguro; detecta más, pero se activa por error más seguido. Empieza
-     con 0,5.
-   - **Reanudar escucha tras**: segundos que Exy deja libre el micrófono para el
-     asistente (60 s por defecto).
+1. **Conceder micrófono**: es lo único obligatorio para empezar.
+2. **Primeros pasos**: mientras falte algún permiso aparece una lista con su
+   progreso. Pulsa **Conceder** en cada uno:
+   - **Notificaciones** → *Permitir*. La notificación fija mantiene a Exy activo
+     y trae *Pausar / Reanudar*, *Escuchar ya* y *Detener*.
+   - **Abrir apps desde segundo plano** (permiso *Mostrar sobre otras apps*) →
+     busca **Exy** y actívalo. Sin esto Android no deja abrir las apps.
+   - **Sin límite de batería** → *Permitir*.
+
+   Cuando están todos, la lista se reduce a **"Permisos listos"**.
 3. Pulsa **Iniciar escucha**. La primera vez tarda unos segundos: copia el
-   modelo de voz a la memoria interna. Luego aparece la notificación
-   "Escuchando «Oye Exi»" y ya puedes salir de la app.
+   modelo de voz a la memoria interna. Luego ya puedes salir de la app.
 
-Bajo el estado, **"Último que escuché"** muestra lo que Vosk entendió. Sirve
-para ajustar: si dices «Oye Exi» y ahí aparece la frase pero no se activa,
-sube la sensibilidad; si se activa sola, bájala.
+**Ajustes** (al final de la pantalla):
 
-En **Comandos de voz** está la lista de frases, a qué app va cada una y si esa
-app está instalada. El botón **Probar** de cada fila abre la app para comprobar
-que funciona sin tener que hablar.
+- **Precisión**: *Estricta*, *Normal* (recomendada) o *Sensible*. Sensible
+  detecta más, pero se activa sola más seguido.
+- **Micrófono libre para la app**: 30 s, 1 min, 2 min o 5 min antes de volver a
+  escuchar «Oye Exi». En la espera, **Escuchar ya** la corta.
+
+Bajo el estado, **"último: «…»"** muestra lo que Vosk entendió. Sirve para
+ajustar: si dices «Oye Exi», aparece la frase y no se activa, sube a
+*Sensible*; si se activa sola, baja a *Estricta*.
+
+En **Comandos** está la lista de frases, a qué app va cada una y si esa app está
+instalada (*Web* si no). La flecha de cada fila abre la app para probarla sin
+hablar.
 
 ---
 
@@ -155,7 +160,8 @@ app/src/main/java/cl/exy/app/
 ├── WakeWordService.kt    # Servicio en primer plano con Vosk
 ├── Comandos.kt           # Gramática y detección de «oye exi» + comando
 ├── VoskModel.kt          # Copia el modelo del APK a almacenamiento interno
-└── ExySettings.kt        # Sensibilidad y tiempo de reanudación
+├── OrbeView.kt           # Anillo del estado (escuchando, cuenta regresiva)
+└── ExySettings.kt        # Precisión y tiempo de reanudación
 
 app/src/main/assets/comandos.json   # Frases y variantes que Exy reconoce
 ```
