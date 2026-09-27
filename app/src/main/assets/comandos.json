@@ -6,8 +6,8 @@
   "destinos": {
     "claude_code": ["claude code", "cloud code", "clau code", "claude cod", "cloud cod", "claude código"],
     "claude": ["claude", "cloud", "clau", "claudio"],
-    "chatgpt": ["chat ge pe te", "chat yipití", "chat gipití", "chat", "chad ge pe te"],
-    "gemini": ["gemini", "géminis", "gémini"]
+    "chatgpt": ["chat ge pe te", "chat ji pi ti", "chat", "chad ge pe te"],
+    "gemini": ["gemini", "géminis"]
   },
   "pruebas": {
     "oye exi": "gemini",
