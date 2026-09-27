@@ -55,7 +55,6 @@ class WakeWordService : Service() {
     /** Solo se usan desde el hilo principal. */
     private var generation = 0
     private var inForeground = false
-    private var resumeAtWall = 0L
     private var wakeLock: PowerManager.WakeLock? = null
 
     private val resumeRunnable = Runnable { startListening() }
@@ -186,7 +185,8 @@ class WakeWordService : Service() {
 
         vibrate()
         releaseWakeLock()
-        resumeAtWall = System.currentTimeMillis() + delayMs
+        reanudarEn = System.currentTimeMillis() + delayMs
+        cuentaTotalMs = delayMs
         lastDestino = destino
         updateState(State.COOLDOWN, null)
 
@@ -300,38 +300,46 @@ class WakeWordService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+        val nombreDestino = getString((lastDestino ?: Destino.FAVORITO).nombre)
+        val (titulo, texto) = when (state) {
+            State.STOPPED, State.STARTING -> getString(R.string.notif_starting) to null
+            State.LISTENING -> getString(R.string.notif_listening) to getString(R.string.notif_listening_text)
+            State.PAUSED -> getString(R.string.notif_paused) to getString(R.string.notif_paused_text)
+            State.COOLDOWN -> getString(R.string.notif_cooldown, nombreDestino) to
+                (lastMessage ?: getString(R.string.notif_cooldown_text))
+            State.ERROR -> getString(R.string.notif_error) to lastMessage
+        }
+
+        // Sin "Exy" repetido: el nombre de la app ya sale en la cabecera.
         val builder = NotificationCompat.Builder(this, ExyApp.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(getString(R.string.app_name))
+            .setColor(ContextCompat.getColor(this, R.color.exy_mint))
+            .setContentTitle(titulo)
+            .setContentText(texto)
             .setContentIntent(openApp)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+        if (texto != null) builder.setStyle(NotificationCompat.BigTextStyle().bigText(texto))
 
-        val text = when (state) {
-            State.STOPPED, State.STARTING -> getString(R.string.notif_starting)
-            State.LISTENING -> getString(R.string.notif_listening)
-            State.PAUSED -> getString(R.string.notif_paused)
-            State.COOLDOWN -> lastMessage
-                ?: getString(R.string.notif_cooldown, getString((lastDestino ?: Destino.FAVORITO).nombre))
-            State.ERROR -> getString(R.string.notif_error, lastMessage.orEmpty())
-        }
-        builder.setContentText(text)
-        builder.setStyle(NotificationCompat.BigTextStyle().bigText(text))
-
-        if (state == State.COOLDOWN && lastMessage == null) {
-            builder.setWhen(resumeAtWall)
+        if (state == State.COOLDOWN) {
+            // Cuenta regresiva en la cabecera de la notificación.
+            builder.setWhen(reanudarEn)
                 .setShowWhen(true)
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true)
         }
 
-        if (state == State.PAUSED || state == State.ERROR) {
-            builder.addAction(0, getString(R.string.action_resume), serviceIntent(ACTION_RESUME, 1))
-        } else {
-            builder.addAction(0, getString(R.string.action_pause), serviceIntent(ACTION_PAUSE, 2))
+        when (state) {
+            State.PAUSED, State.ERROR ->
+                builder.addAction(0, getString(R.string.action_resume), serviceIntent(ACTION_RESUME, 1))
+            State.COOLDOWN -> {
+                builder.addAction(0, getString(R.string.action_listen_now), serviceIntent(ACTION_RESUME, 1))
+                builder.addAction(0, getString(R.string.action_pause), serviceIntent(ACTION_PAUSE, 2))
+            }
+            else -> builder.addAction(0, getString(R.string.action_pause), serviceIntent(ACTION_PAUSE, 2))
         }
         builder.addAction(0, getString(R.string.action_stop), serviceIntent(ACTION_STOP, 3))
         return builder.build()
@@ -393,6 +401,16 @@ class WakeWordService : Service() {
 
         @Volatile
         var lastMessage: String? = null
+            private set
+
+        /** Cuándo vuelve a escuchar tras abrir una app (reloj de pared, ms). */
+        @Volatile
+        var reanudarEn: Long = 0L
+            private set
+
+        /** Duración total de esa espera, para dibujar la cuenta regresiva. */
+        @Volatile
+        var cuentaTotalMs: Long = 1L
             private set
 
         /** La última app que Exy abrió. */

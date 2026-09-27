@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Tokens de la marca Exy (del logo). Usar estos nombres, nunca hex sueltos. -->
 <resources>
-    <color name="exy_primary">#3949AB</color>
-    <color name="exy_on_primary">#FFFFFF</color>
-    <color name="exy_ok">#2E7D32</color>
-    <color name="exy_warn">#C62828</color>
-    <color name="ic_bg">#3949AB</color>
-    <color name="ic_fg">#FFFFFF</color>
+    <color name="exy_bg">#FF05090C</color>          <!-- casi negro con tinte azul -->
+    <color name="exy_surface">#FF0B141A</color>
+    <color name="exy_surface_2">#FF10202A</color>
+    <color name="exy_hair">#14FFFFFF</color>        <!-- hairline 8 % -->
+    <color name="exy_glow">#FF003E57</color>        <!-- brillo azul del logo -->
+    <color name="exy_mint">#FF00FFB6</color>        <!-- único acento -->
+    <color name="exy_mint_dim">#2400FFB6</color>
+    <color name="exy_on_mint">#FF00150F</color>
+    <color name="exy_text">#FFEEF3F5</color>
+    <color name="exy_text_2">#FF9DABB3</color>
+    <color name="exy_text_3">#FF7E8D96</color>
+    <color name="exy_danger">#FFFF7A7A</color>
 </resources>

@@ -15,6 +15,19 @@ class ExySettings(context: Context) {
         get() = prefs.getInt(KEY_RESUME_DELAY, DEFAULT_RESUME_DELAY)
         set(value) = prefs.edit().putInt(KEY_RESUME_DELAY, value.coerceIn(10, 300)).apply()
 
+    /** Las tres opciones de la pantalla; cada una fija una sensibilidad. */
+    enum class Precision(val sensibilidad: Float) {
+        ESTRICTA(0.3f),
+        NORMAL(0.5f),
+        SENSIBLE(0.75f);
+
+        companion object {
+            /** La opción más cercana a una sensibilidad guardada (de versiones con deslizador). */
+            fun desde(sensibilidad: Float): Precision =
+                entries.minBy { kotlin.math.abs(it.sensibilidad - sensibilidad) }
+        }
+    }
+
     private companion object {
         const val KEY_SENSITIVITY = "sensitivity"
         const val KEY_RESUME_DELAY = "resume_delay_s"

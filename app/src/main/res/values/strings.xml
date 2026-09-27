@@ -1,72 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Exy</string>
+    <string name="version">v%1$s</string>
 
     <!-- Notificación -->
     <string name="channel_name">Escucha de Exy</string>
-    <string name="channel_desc">Aviso fijo mientras Exy escucha la palabra clave</string>
+    <string name="channel_desc">Aviso fijo mientras Exy escucha «Oye Exi»</string>
     <string name="notif_listening">Escuchando «Oye Exi»</string>
-    <string name="notif_paused">En pausa: el micrófono está libre</string>
+    <string name="notif_listening_text">Gemini, Claude Code, Claude o ChatGPT</string>
+    <string name="notif_paused">En pausa</string>
+    <string name="notif_paused_text">El micrófono está libre</string>
     <string name="notif_starting">Preparando la escucha…</string>
-    <string name="notif_cooldown">Abrí %1$s. Vuelvo a escuchar en</string>
-    <string name="notif_error">Error: %1$s</string>
+    <string name="notif_cooldown">Abrí %1$s</string>
+    <string name="notif_cooldown_text">Vuelvo a escuchar en unos segundos</string>
+    <string name="notif_error">Exy necesita atención</string>
     <string name="action_pause">Pausar</string>
     <string name="action_resume">Reanudar</string>
+    <string name="action_listen_now">Escuchar ya</string>
     <string name="action_stop">Detener</string>
 
-    <!-- Pantalla principal -->
-    <string name="intro">Di «Oye Exi» y Exy abrirá Gemini, o nombra otra app de la lista. El reconocimiento funciona sin internet, dentro del teléfono.</string>
-    <string name="section_service">Servicio</string>
-    <string name="section_tuning">Ajustes</string>
-    <string name="section_permissions">Permisos</string>
+    <!-- Estado principal -->
+    <string name="estado_sin_mic">Casi listo</string>
+    <string name="detalle_sin_mic">Exy necesita el micrófono para oír «Oye Exi».</string>
+    <string name="estado_detenido">Lista para escuchar</string>
+    <string name="detalle_detenido">Toca iniciar y di «Oye Exi» cuando quieras.</string>
+    <string name="estado_iniciando">Iniciando…</string>
+    <string name="detalle_iniciando">La primera vez tarda unos segundos: estoy preparando el modelo de voz.</string>
+    <string name="estado_escuchando">Escuchando</string>
+    <string name="detalle_escuchando">Di «Oye Exi» de corrido, sin pausa.</string>
+    <string name="estado_pausa">En pausa</string>
+    <string name="detalle_pausa">El micrófono está libre hasta que reanudes.</string>
+    <string name="estado_cuenta">Abrí %1$s</string>
+    <string name="detalle_cuenta">Vuelvo a escuchar en %1$s</string>
+    <string name="estado_error">Algo falló</string>
+    <string name="oido">último: «%1$s»</string>
 
-    <string name="status_stopped">Detenido</string>
-    <string name="status_starting">Iniciando…</string>
-    <string name="status_listening">Escuchando</string>
-    <string name="status_paused">En pausa</string>
-    <string name="status_cooldown">App abierta, esperando para reanudar</string>
-    <string name="status_error">Error: %1$s</string>
-
-    <string name="last_heard">Último que escuché: «%1$s»</string>
-    <string name="last_heard_none">Todavía no he escuchado nada</string>
+    <string name="btn_conceder_mic">Conceder micrófono</string>
     <string name="btn_start">Iniciar escucha</string>
+    <string name="btn_iniciando">Iniciando…</string>
+    <string name="btn_escuchar_ya">Escuchar ya</string>
+    <string name="btn_reanudar">Reanudar</string>
+    <string name="btn_reintentar">Reintentar</string>
+    <string name="btn_pausar">Pausar</string>
     <string name="btn_stop">Detener</string>
 
-    <string name="label_sensitivity">Sensibilidad: %1$.2f</string>
-    <string name="help_sensitivity">Más alta acepta la frase aunque Exy no la haya entendido con total seguridad: detecta más, pero se equivoca más seguido.</string>
-    <string name="label_resume_delay">Reanudar escucha tras: %1$d s</string>
-    <string name="help_resume_delay">Tiempo que el micrófono queda libre para el asistente.</string>
-
+    <!-- Primeros pasos -->
+    <string name="pasos">Primeros pasos · %1$d de %2$d</string>
+    <string name="permisos_listos">Permisos listos</string>
     <string name="perm_mic">Micrófono</string>
+    <string name="perm_mic_det">Para oír «Oye Exi»</string>
     <string name="perm_notifications">Notificaciones</string>
-    <string name="perm_overlay">Mostrar sobre otras apps</string>
-    <string name="perm_battery">Sin optimización de batería</string>
-    <string name="perm_granted">Concedido</string>
+    <string name="perm_notifications_det">El aviso fijo mantiene a Exy activo</string>
+    <string name="perm_overlay">Abrir apps desde segundo plano</string>
+    <string name="perm_overlay_det">Permiso «Mostrar sobre otras apps»</string>
+    <string name="perm_battery">Sin límite de batería</string>
+    <string name="perm_battery_det">Para que One UI no la duerma</string>
     <string name="perm_request">Conceder</string>
-    <string name="perm_denied_forever">Ábrelo en Ajustes del sistema para concederlo.</string>
-
-    <string name="missing_config">Falta configurar: %1$s</string>
-    <string name="missing_mic">permiso de micrófono</string>
-    <string name="error_retry">%1$s. Reintento en unos segundos.</string>
-    <string name="version">Versión %1$s</string>
-    <string name="no_se_pudo_abrir">No pude abrir %1$s</string>
+    <string name="perm_denied_forever">Actívalo en Ajustes del sistema.</string>
 
     <!-- Comandos de voz -->
-    <string name="section_comandos">Comandos de voz</string>
-    <string name="help_comandos">Dilo de corrido, sin pausa después de «Oye Exi».</string>
-    <string name="btn_probar">Probar</string>
-    <string name="comillas">«%1$s»</string>
-    <string name="cmd_favorito">Oye Exi</string>
-    <string name="cmd_claude_code">Oye Exi, vamos a Claude Code</string>
-    <string name="cmd_claude">Oye Exi, abre Claude</string>
-    <string name="cmd_chatgpt">Oye Exi, ChatGPT</string>
+    <string name="section_comandos">Comandos</string>
+    <string name="cmd_favorito">«Oye Exi»</string>
+    <string name="cmd_claude_code">«…vamos a Claude Code»</string>
+    <string name="cmd_claude">«…Claude»</string>
+    <string name="cmd_chatgpt">«…ChatGPT»</string>
     <string name="dest_gemini">Gemini</string>
     <string name="dest_claude_code">Claude Code</string>
     <string name="dest_claude">Claude</string>
     <string name="dest_chatgpt">ChatGPT</string>
-    <string name="dest_app">→ %1$s (app instalada)</string>
-    <string name="dest_web">→ %1$s (web, la app no está instalada)</string>
-    <string name="dest_favorito">→ %1$s, tu favorito</string>
-    <string name="dest_claude_code_url">→ Claude Code (claude.ai/code; abre la app de Claude si la acepta, si no el navegador)</string>
-    <string name="dest_sin_app">→ %1$s no está instalada: se abrirá el asistente del sistema</string>
+    <string name="dest_claude_code_url">claude.ai/code</string>
+    <string name="dest_web">%1$s · no instalada, abre la web</string>
+    <string name="dest_sin_app">%1$s no está instalada: abre el asistente del sistema</string>
+    <string name="chip_favorito">Favorito</string>
+    <string name="chip_web">Web</string>
+    <string name="probar">Probar %1$s</string>
+
+    <!-- Ajustes -->
+    <string name="section_precision">Precisión</string>
+    <string name="precision_estricta">Estricta</string>
+    <string name="precision_normal">Normal</string>
+    <string name="precision_sensible">Sensible</string>
+    <string name="help_precision_estricta">Solo se activa si te entendió con seguridad. Puede que tengas que repetir.</string>
+    <string name="help_precision_normal">Equilibrio entre detectar bien y no activarse sola.</string>
+    <string name="help_precision_sensible">Detecta más, pero se activa sola más seguido.</string>
+    <string name="section_tiempo">Micrófono libre para la app</string>
+    <string name="tiempo_30">30 s</string>
+    <string name="tiempo_60">1 min</string>
+    <string name="tiempo_120">2 min</string>
+    <string name="tiempo_300">5 min</string>
+    <string name="help_tiempo">Tiempo antes de volver a escuchar «Oye Exi» después de abrir una app.</string>
+
+    <!-- Errores -->
+    <string name="missing_config">Falta: %1$s</string>
+    <string name="missing_mic">permiso de micrófono</string>
+    <string name="error_retry">%1$s. Reintento en unos segundos.</string>
+    <string name="no_se_pudo_abrir">No pude abrir %1$s. Revisa el permiso «Mostrar sobre otras apps».</string>
 </resources>

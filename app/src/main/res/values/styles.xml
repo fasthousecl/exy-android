@@ -3,38 +3,132 @@
     <!-- Padre implícito de los estilos Exy.* -->
     <style name="Exy" />
 
-    <style name="Exy.Section">
+    <!-- Tipografía: Space Grotesk para títulos y botones, sistema para textos. -->
+    <style name="Exy.Brand">
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/exy_text</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="Exy.State">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">24dp</item>
-        <item name="android:layout_marginBottom">8dp</item>
-        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:textColor">@color/exy_text</item>
+        <item name="android:gravity">center</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 
-    <style name="Exy.Help">
+    <style name="Exy.Sub">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textAppearance">?attr/textAppearanceBodySmall</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/exy_text_2</item>
+        <item name="android:gravity">center</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
     </style>
 
-    <style name="Exy.PermRow">
+    <style name="Exy.Mono">
+        <item name="android:fontFamily">@font/roboto_mono</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/exy_text_3</item>
+    </style>
+
+    <style name="Exy.Label" parent="Exy.Mono">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:orientation">horizontal</item>
-        <item name="android:gravity">center_vertical</item>
-        <item name="android:minHeight">56dp</item>
+        <item name="android:layout_marginTop">26dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:accessibilityHeading">true</item>
     </style>
 
-    <style name="Exy.PermLabel">
-        <item name="android:layout_width">0dp</item>
+    <style name="Exy.Hint">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/exy_text_3</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
     </style>
 
-    <style name="Exy.PermButton" parent="Widget.Material3.Button.OutlinedButton">
+    <style name="Exy.Card">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/bg_card</item>
+    </style>
+
+    <style name="Exy.ItemTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/exy_text</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Exy.ItemSub">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/exy_text_2</item>
+    </style>
+
+    <!-- Botones: 52dp de alto, esquinas de 14dp, texto en Space Grotesk. -->
+    <style name="Exy.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:layout_height">52dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">14dp</item>
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="backgroundTint">@color/btn_primary_bg</item>
+        <item name="android:textColor">@color/btn_primary_text</item>
+    </style>
+
+    <style name="Exy.Button.Secondary" parent="Widget.Material3.Button.UnelevatedButton">
+        <item name="android:layout_height">52dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">14dp</item>
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="backgroundTint">@color/exy_surface_2</item>
+        <item name="android:textColor">@color/exy_text</item>
+        <item name="iconTint">@color/exy_text</item>
+        <item name="strokeColor">@color/exy_hair</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Exy.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:fontFamily">@font/space_grotesk_semibold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/exy_mint</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <!-- Selector segmentado (Precisión / Tiempo) -->
+    <style name="Exy.Segment" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:fontFamily">@font/space_grotesk_medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/segment_text</item>
+        <item name="backgroundTint">@color/segment_bg</item>
+        <item name="strokeColor">@color/segment_stroke</item>
+        <item name="cornerRadius">12dp</item>
     </style>
 </resources>

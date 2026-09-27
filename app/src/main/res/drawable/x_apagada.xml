@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado desde el logo aprobado (viewport 108). Orden: franjas, triángulos, sombra de la X, X. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp" android:height="120dp"
+    android:viewportWidth="120" android:viewportHeight="120">
+    <group android:translateX="6" android:translateY="6">
+        <path android:pathData="M17.6,35.28h73v7.65h-73z" android:fillColor="#FF56646C" />
+        <path android:pathData="M17.6,65.08h73v7.65h-73z" android:fillColor="#FF56646C" />
+        <path android:pathData="M17,0H91L54,52Z" android:fillColor="#FF2B3A42" />
+        <path android:pathData="M17,108H91L54,56Z" android:fillColor="#FF2B3A42" />
+        <!-- sombra de la X: volumen, no un hueco -->
+        <group android:translateX="0.5" android:translateY="0.8">
+        <path android:pathData="M10.5,0H23.9L54,44.1L84.1,0H97.5L60.7,54L97.5,108H84.1L54,63.9L23.9,108H10.5L47.3,54Z" android:fillColor="#FF000000" android:fillAlpha="0.28" />
+        </group>
+        <group android:translateX="1.1" android:translateY="1.6">
+        <path android:pathData="M10.5,0H23.9L54,44.1L84.1,0H97.5L60.7,54L97.5,108H84.1L54,63.9L23.9,108H10.5L47.3,54Z" android:fillColor="#FF000000" android:fillAlpha="0.22" />
+        </group>
+        <path android:pathData="M10.5,0H23.9L54,44.1L84.1,0H97.5L60.7,54L97.5,108H84.1L54,63.9L23.9,108H10.5L47.3,54Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="54" android:gradientRadius="62">
+                <item android:offset="0" android:color="#FFC9D1D6" />
+                <item android:offset="0.5" android:color="#FF6E7A80" />
+                <item android:offset="1" android:color="#FF1D2226" />
+            </gradient>
+        </aapt:attr>
+        </path>
+    </group>
+</vector>

@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Exy" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/exy_primary</item>
-        <item name="colorOnPrimary">@color/exy_on_primary</item>
+    <!-- Exy es siempre oscuro: es la identidad del logo, no un modo. -->
+    <style name="Theme.Exy" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/exy_mint</item>
+        <item name="colorOnPrimary">@color/exy_on_mint</item>
+        <item name="colorSecondaryContainer">@color/exy_surface_2</item>
+        <item name="colorOnSecondaryContainer">@color/exy_text</item>
+        <item name="colorSurface">@color/exy_bg</item>
+        <item name="colorOnSurface">@color/exy_text</item>
+        <item name="colorOnSurfaceVariant">@color/exy_text_2</item>
+        <item name="colorOutline">@color/exy_hair</item>
+        <item name="colorError">@color/exy_danger</item>
+        <item name="android:colorBackground">@color/exy_bg</item>
+        <item name="android:windowBackground">@color/exy_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>

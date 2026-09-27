@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado desde el logo aprobado (viewport 108). Orden: franjas, triángulos, sombra de la X, X. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M17.6,35.28h73v7.65h-73z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M17.6,65.08h73v7.65h-73z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M17,0H91L54,52Z" android:fillColor="#FFFFFFFF" android:fillAlpha="0.6" />
+    <path android:pathData="M17,108H91L54,56Z" android:fillColor="#FFFFFFFF" android:fillAlpha="0.6" />
+    <path android:pathData="M10.5,0H23.9L54,44.1L84.1,0H97.5L60.7,54L97.5,108H84.1L54,63.9L23.9,108H10.5L47.3,54Z" android:fillColor="#FFFFFFFF" />
+</vector>
