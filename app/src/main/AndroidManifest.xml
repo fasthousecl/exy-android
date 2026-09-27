@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Solo para revisar si hay una versión nueva en GitHub. El reconocimiento
+         de voz es local: el audio nunca sale del teléfono. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Android 11+ solo deja ver otras apps si se declaran aquí: las apps que
          Exy abre y el asistente del sistema como respaldo de Gemini. -->
     <queries>
@@ -26,6 +30,11 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
+        </intent>
+        <!-- Para elegir una app al crear un comando propio («Oye Exi, Spotify»). -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 
@@ -51,6 +60,36 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".PruebaActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ComandosActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".HistorialActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Botón en los ajustes rápidos -->
+        <service
+            android:name=".ExyTile"
+            android:exported="true"
+            android:icon="@drawable/ic_notification"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>
 
         <service
             android:name=".WakeWordService"

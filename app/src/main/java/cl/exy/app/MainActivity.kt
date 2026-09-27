@@ -17,14 +17,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import cl.exy.app.WakeWordService.State
 import cl.exy.app.databinding.ActivityMainBinding
+import cl.exy.app.databinding.ItemAccionBinding
 import cl.exy.app.databinding.ItemComandoBinding
 import cl.exy.app.databinding.ItemPasoBinding
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import kotlin.math.ceil
 
 class MainActivity : AppCompatActivity() {
@@ -60,16 +60,27 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         settings = ExySettings(this)
 
-        // El contenido respeta la barra de estado y la de gestos (pantalla de borde a borde).
-        ViewCompat.setOnApplyWindowInsetsListener(binding.scroll) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            v.updatePadding(top = bars.top, bottom = bars.bottom)
-            insets
-        }
+        Pantallas.bordes(binding.scroll)
 
         binding.txtVersion.text = getString(R.string.version, BuildConfig.VERSION_NAME)
         setupAcciones()
         setupAjustes()
+        setupHerramientas()
+        setupAutomatico()
+        setupActualizaciones()
+        iniciarSiSePidio(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        iniciarSiSePidio(intent)
+    }
+
+    /** El botón de ajustes rápidos abre la app con este extra para empezar a escuchar. */
+    private fun iniciarSiSePidio(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_INICIAR, false) != true) return
+        intent.removeExtra(EXTRA_INICIAR)
+        if (hasMic() && !WakeWordService.isRunning) iniciar()
     }
 
     override fun onStart() {
@@ -92,6 +103,8 @@ class MainActivity : AppCompatActivity() {
         renderEstado()
         renderPasos()
         renderComandos()
+        renderHerramientas()
+        renderAutomatico()
     }
 
     // ---------------------------------------------------------------- estado
@@ -120,7 +133,7 @@ class MainActivity : AppCompatActivity() {
     private fun renderEstado() {
         val estado = WakeWordService.state
         val mensaje = WakeWordService.lastMessage
-        val destino = getString((WakeWordService.lastDestino ?: Destino.FAVORITO).nombre)
+        val destino = (WakeWordService.lastDestino ?: Destino.favorito(this)).nombre(this)
 
         // Título, detalle, X y anillo
         val (titulo, detalle) = when {
@@ -136,6 +149,10 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.estado_pausa) to getString(R.string.detalle_pausa)
             estado == State.COOLDOWN ->
                 getString(R.string.estado_cuenta, destino) to (mensaje ?: getString(R.string.detalle_cuenta, restante()))
+            estado == State.RESTING -> getString(R.string.estado_descanso) to
+                getString(R.string.detalle_descanso, ExySettings.hora(settings.descansoHasta))
+            estado == State.NO_HEADPHONES ->
+                getString(R.string.estado_auriculares) to getString(R.string.detalle_auriculares)
             else ->
                 getString(R.string.estado_error) to mensaje.orEmpty()
         }
@@ -238,31 +255,39 @@ class MainActivity : AppCompatActivity() {
 
     // ------------------------------------------------------- comandos de voz
 
-    private val comandos = listOf(
-        R.string.cmd_favorito to Destino.FAVORITO,
-        R.string.cmd_claude_code to Destino.CLAUDE_CODE,
-        R.string.cmd_claude to Destino.CLAUDE,
-        R.string.cmd_chatgpt to Destino.CHATGPT,
-    )
-
+    /** Favorito, los incluidos, los propios y una fila para administrarlos. */
     private fun renderComandos() {
+        val favorito = Destino.favorito(this)
+        val filas = buildList {
+            add(getString(R.string.cmd_favorito) to favorito)
+            add(getString(R.string.cmd_claude_code) to Destino.CLAUDE_CODE)
+            add(getString(R.string.cmd_claude) to Destino.CLAUDE)
+            add(getString(R.string.cmd_chatgpt) to Destino.CHATGPT)
+            // «…Gemini» solo aporta si Gemini no es ya el favorito.
+            if (favorito != Destino.GEMINI) add(getString(R.string.cmd_gemini) to Destino.GEMINI)
+            ComandosUsuario(this@MainActivity).lista().forEach { c ->
+                add("«…${c.frases.firstOrNull().orEmpty()}»" to Destino.deApp(c.paquete, c.nombre))
+            }
+        }
+
         val lista = binding.listaComandos
         lista.removeAllViews()
-        comandos.forEachIndexed { i, (frase, destino) ->
+        filas.forEachIndexed { i, (frase, destino) ->
             if (i > 0) lista.addView(separador())
             val fila = ItemComandoBinding.inflate(layoutInflater, lista, true)
-            val nombre = getString(destino.nombre)
+            val nombre = destino.nombre(this)
             val instalada = destino.instalada(this)
-            fila.txtFrase.setText(frase)
+            val esFavorito = i == 0
+            fila.txtFrase.text = frase
             fila.txtDestino.text = when {
                 destino == Destino.CLAUDE_CODE -> getString(R.string.dest_claude_code_url)
-                destino == Destino.FAVORITO && !instalada -> getString(R.string.dest_sin_app, nombre)
-                instalada || destino == Destino.FAVORITO -> nombre
+                destino == Destino.GEMINI && !instalada -> getString(R.string.dest_sin_app, nombre)
+                instalada || !destino.tieneWeb -> nombre
                 else -> getString(R.string.dest_web, nombre)
             }
             when {
-                destino == Destino.FAVORITO -> chip(fila, R.string.chip_favorito, R.drawable.bg_chip, R.color.exy_mint)
-                destino != Destino.CLAUDE_CODE && !instalada ->
+                esFavorito -> chip(fila, R.string.chip_favorito, R.drawable.bg_chip, R.color.exy_mint)
+                destino.tieneWeb && destino != Destino.CLAUDE_CODE && !instalada ->
                     chip(fila, R.string.chip_web, R.drawable.bg_chip_muted, R.color.exy_text_2)
                 else -> fila.txtChip.isVisible = false
             }
@@ -271,6 +296,13 @@ class MainActivity : AppCompatActivity() {
                 if (!destino.abrir(this)) toast(getString(R.string.no_se_pudo_abrir, nombre))
             }
         }
+
+        // Última fila: ir a administrar comandos y favorito.
+        lista.addView(separador())
+        val admin = ItemAccionBinding.inflate(layoutInflater, lista, true)
+        admin.txtTitulo.setText(R.string.administrar_comandos)
+        admin.txtDetalle.text = getString(R.string.administrar_det, favorito.nombre(this))
+        admin.root.setOnClickListener { startActivity(Intent(this, ComandosActivity::class.java)) }
     }
 
     private fun chip(fila: ItemComandoBinding, texto: Int, fondo: Int, color: Int) {
@@ -278,6 +310,99 @@ class MainActivity : AppCompatActivity() {
         fila.txtChip.setText(texto)
         fila.txtChip.setBackgroundResource(fondo)
         fila.txtChip.setTextColor(ContextCompat.getColor(this, color))
+    }
+
+    // ------------------------------------------------------------ herramientas
+
+    private fun setupHerramientas() {
+        binding.filaPrueba.txtTitulo.setText(R.string.prueba_titulo)
+        binding.filaPrueba.txtDetalle.setText(R.string.prueba_det)
+        binding.filaPrueba.root.setOnClickListener {
+            if (hasMic()) {
+                startActivity(Intent(this, PruebaActivity::class.java))
+            } else {
+                requestMic.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+        binding.filaHistorial.txtTitulo.setText(R.string.historial_titulo)
+        binding.filaHistorial.root.setOnClickListener { startActivity(Intent(this, HistorialActivity::class.java)) }
+    }
+
+    private fun renderHerramientas() {
+        val n = Historial(this).lista().size
+        binding.filaHistorial.txtDetalle.text =
+            if (n == 0) getString(R.string.historial_det) else getString(R.string.historial_det_n, n)
+    }
+
+    // -------------------------------------------------------------- automático
+
+    private fun setupAutomatico() {
+        binding.swDescanso.setOnCheckedChangeListener { _, on ->
+            settings.descansoActivo = on
+            renderAutomatico()
+            WakeWordService.send(this, WakeWordService.ACTION_CHECK)
+        }
+        binding.swAuriculares.setOnCheckedChangeListener { _, on ->
+            settings.soloAuriculares = on
+            WakeWordService.send(this, WakeWordService.ACTION_CHECK)
+        }
+        binding.btnDesde.setOnClickListener {
+            elegirHora(R.string.elegir_desde, settings.descansoDesde) { settings.descansoDesde = it }
+        }
+        binding.btnHasta.setOnClickListener {
+            elegirHora(R.string.elegir_hasta, settings.descansoHasta) { settings.descansoHasta = it }
+        }
+    }
+
+    private fun renderAutomatico() {
+        binding.swDescanso.isChecked = settings.descansoActivo
+        binding.swAuriculares.isChecked = settings.soloAuriculares
+        binding.filaHoras.isVisible = settings.descansoActivo
+        binding.btnDesde.text = getString(R.string.desde, ExySettings.hora(settings.descansoDesde))
+        binding.btnHasta.text = getString(R.string.hasta, ExySettings.hora(settings.descansoHasta))
+    }
+
+    private fun elegirHora(titulo: Int, actual: Int, guardar: (Int) -> Unit) {
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(actual / 60)
+            .setMinute(actual % 60)
+            .setTitleText(titulo)
+            .build()
+        picker.addOnPositiveButtonClickListener {
+            guardar(picker.hour * 60 + picker.minute)
+            renderAutomatico()
+            WakeWordService.send(this, WakeWordService.ACTION_CHECK)
+        }
+        picker.show(supportFragmentManager, "hora")
+    }
+
+    // ----------------------------------------------------------- actualización
+
+    private fun setupActualizaciones() {
+        binding.btnBuscarActualizacion.setOnClickListener {
+            Actualizaciones.revisar(
+                this,
+                forzar = true,
+                listo = { nueva ->
+                    mostrarActualizacion(nueva)
+                    if (nueva == null) toast(getString(R.string.sin_actualizacion))
+                },
+                error = { toast(getString(R.string.error_actualizacion)) },
+            )
+        }
+        binding.btnDescargar.setOnClickListener {
+            Actualizaciones.pendiente(this)?.let {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.descarga)))
+            }
+        }
+        // Revisión automática, como mucho cada 6 horas.
+        Actualizaciones.revisar(this, forzar = false, listo = ::mostrarActualizacion)
+    }
+
+    private fun mostrarActualizacion(nueva: Actualizaciones.Nueva?) {
+        binding.bannerActualizacion.isVisible = nueva != null
+        nueva?.let { binding.txtActualizacion.text = getString(R.string.hay_actualizacion, it.version) }
     }
 
     // ---------------------------------------------------------------- ajustes
@@ -376,4 +501,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+
+    companion object {
+        /** Extra para abrir la app y empezar a escuchar (botón de ajustes rápidos). */
+        const val EXTRA_INICIAR = "cl.exy.app.INICIAR"
+    }
 }

@@ -4,25 +4,41 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.annotation.StringRes
 
 /**
- * Las apps que Exy sabe abrir. El id coincide con el de assets/comandos.json.
+ * Una app que Exy sabe abrir: las cuatro integradas (sus ids coinciden con los
+ * de assets/comandos.json) o una app que el usuario agregó ([ComandosUsuario]).
  *
  * Cada destino se intenta en orden: primero la app instalada y, si no está, su
  * versión web. Desde el servicio en segundo plano esto solo funciona con el
  * permiso "Mostrar sobre otras apps" concedido.
  */
-enum class Destino(
+data class Destino(
     val id: String,
-    @param:StringRes val nombre: Int,
-    private val paquete: String?,
+    private val nombreRes: Int?,
+    private val nombreTexto: String?,
+    val paquete: String?,
     private val url: String?,
+    private val tipo: Tipo,
 ) {
-    GEMINI("gemini", R.string.dest_gemini, "com.google.android.apps.bard", null),
-    CLAUDE_CODE("claude_code", R.string.dest_claude_code, "com.anthropic.claude", "https://claude.ai/code"),
-    CLAUDE("claude", R.string.dest_claude, "com.anthropic.claude", "https://claude.ai/new"),
-    CHATGPT("chatgpt", R.string.dest_chatgpt, "com.openai.chatgpt", "https://chatgpt.com/");
+
+    enum class Tipo {
+        /** Su app; si no está, el asistente predeterminado del sistema. */
+        ASISTENTE,
+
+        /** Un enlace que se ofrece primero a su app (Claude Code en claude.ai/code). */
+        ENLACE,
+
+        /** Su app; si no está, su versión web (si tiene). */
+        APP,
+    }
+
+    fun nombre(context: Context): String = nombreTexto ?: context.getString(nombreRes ?: R.string.app_name)
+
+    val esIntegrado: Boolean get() = INTEGRADOS.any { it.id == id }
+
+    /** Si abre una página web cuando la app no está (Claude Code siempre es web). */
+    val tieneWeb: Boolean get() = url != null
 
     fun instalada(context: Context): Boolean =
         paquete != null && context.packageManager.getLaunchIntentForPackage(paquete) != null
@@ -45,21 +61,17 @@ enum class Destino(
     private fun intentos(context: Context): List<Intent> = buildList {
         val lanzar = paquete?.let { context.packageManager.getLaunchIntentForPackage(it) }
         val web = url?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) }
-        when (this@Destino) {
-            // Gemini: su app; si no está, el asistente predeterminado del sistema.
-            GEMINI -> {
+        when (tipo) {
+            Tipo.ASISTENTE -> {
                 lanzar?.let(::add)
                 add(Intent(Intent.ACTION_VOICE_COMMAND))
                 add(Intent(Intent.ACTION_ASSIST))
             }
-            // Claude Code vive en claude.ai/code: primero se ofrece el enlace a la
-            // app de Claude y, si no lo acepta, se abre en el navegador.
-            CLAUDE_CODE -> {
+            Tipo.ENLACE -> {
                 web?.let { add(Intent(it).setPackage(paquete)) }
                 web?.let(::add)
             }
-            // Claude y ChatGPT: su app; si no está, la versión web.
-            CLAUDE, CHATGPT -> {
+            Tipo.APP -> {
                 lanzar?.let(::add)
                 web?.let(::add)
             }
@@ -67,8 +79,34 @@ enum class Destino(
     }
 
     companion object {
-        val FAVORITO = GEMINI
+        val GEMINI = Destino(
+            "gemini", R.string.dest_gemini, null, "com.google.android.apps.bard", null, Tipo.ASISTENTE,
+        )
+        val CLAUDE_CODE = Destino(
+            "claude_code", R.string.dest_claude_code, null, "com.anthropic.claude", "https://claude.ai/code", Tipo.ENLACE,
+        )
+        val CLAUDE = Destino(
+            "claude", R.string.dest_claude, null, "com.anthropic.claude", "https://claude.ai/new", Tipo.APP,
+        )
+        val CHATGPT = Destino(
+            "chatgpt", R.string.dest_chatgpt, null, "com.openai.chatgpt", "https://chatgpt.com/", Tipo.APP,
+        )
 
-        fun porId(id: String): Destino? = entries.firstOrNull { it.id == id }
+        val INTEGRADOS = listOf(GEMINI, CLAUDE_CODE, CLAUDE, CHATGPT)
+
+        /** Id de un destino agregado por el usuario: "app:<paquete>". */
+        fun idDeApp(paquete: String) = "app:$paquete"
+
+        fun deApp(paquete: String, nombre: String) = Destino(idDeApp(paquete), null, nombre, paquete, null, Tipo.APP)
+
+        /** Integrados y los que agregó el usuario. */
+        fun todos(context: Context): List<Destino> =
+            INTEGRADOS + ComandosUsuario(context).lista().map { deApp(it.paquete, it.nombre) }
+
+        fun porId(context: Context, id: String): Destino? = todos(context).firstOrNull { it.id == id }
+
+        /** El que abre «Oye Exi» a secas (Gemini si no se eligió otro o ya no existe). */
+        fun favorito(context: Context): Destino =
+            porId(context, ExySettings(context).favoritoId) ?: GEMINI
     }
 }

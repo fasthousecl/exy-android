@@ -7,7 +7,7 @@
     <string name="channel_name">Escucha de Exy</string>
     <string name="channel_desc">Aviso fijo mientras Exy escucha «Oye Exi»</string>
     <string name="notif_listening">Escuchando «Oye Exi»</string>
-    <string name="notif_listening_text">Gemini, Claude Code, Claude o ChatGPT</string>
+    <string name="notif_listening_text">Di «Oye Exi» y el nombre de una app</string>
     <string name="notif_paused">En pausa</string>
     <string name="notif_paused_text">El micrófono está libre</string>
     <string name="notif_starting">Preparando la escucha…</string>
@@ -64,6 +64,7 @@
     <string name="cmd_claude_code">«…vamos a Claude Code»</string>
     <string name="cmd_claude">«…Claude»</string>
     <string name="cmd_chatgpt">«…ChatGPT»</string>
+    <string name="cmd_gemini">«…Gemini»</string>
     <string name="dest_gemini">Gemini</string>
     <string name="dest_claude_code">Claude Code</string>
     <string name="dest_claude">Claude</string>
@@ -95,4 +96,95 @@
     <string name="missing_mic">permiso de micrófono</string>
     <string name="error_retry">%1$s. Reintento en unos segundos.</string>
     <string name="no_se_pudo_abrir">No pude abrir %1$s. Revisa el permiso «Mostrar sobre otras apps».</string>
+    <!-- Pausas automáticas -->
+    <string name="estado_descanso">Descansando</string>
+    <string name="detalle_descanso">Vuelvo a escuchar a las %1$s.</string>
+    <string name="estado_auriculares">Esperando audífonos</string>
+    <string name="detalle_auriculares">Conecta tus audífonos Bluetooth y vuelvo a escuchar.</string>
+    <string name="notif_descanso">Horario de descanso</string>
+    <string name="notif_descanso_text">Vuelvo a escuchar a las %1$s</string>
+    <string name="notif_auriculares">Esperando audífonos</string>
+    <string name="notif_auriculares_text">Escucho solo con audífonos Bluetooth conectados</string>
+    <string name="section_automatico">Automático</string>
+    <string name="descanso">Horario de descanso</string>
+    <string name="desde">Desde %1$s</string>
+    <string name="hasta">Hasta %1$s</string>
+    <string name="elegir_desde">Empieza el descanso</string>
+    <string name="elegir_hasta">Termina el descanso</string>
+    <string name="auriculares">Solo con audífonos</string>
+    <string name="automatico_ayuda">En descanso o sin audífonos el micrófono queda libre, y Exy vuelve a escuchar sola cuando corresponde.</string>
+
+    <!-- Botón de ajustes rápidos -->
+    <string name="tile_escuchando">Escuchando</string>
+    <string name="tile_espera">App abierta</string>
+    <string name="tile_pausa">En pausa</string>
+    <string name="tile_descanso">Descansando</string>
+    <string name="tile_auriculares">Sin audífonos</string>
+    <string name="tile_error">Necesita atención</string>
+    <string name="tile_detenida">Toca para iniciar</string>
+
+    <!-- Herramientas -->
+    <string name="section_herramientas">Herramientas</string>
+    <string name="volver">Volver</string>
+    <string name="prueba_titulo">Prueba tu voz</string>
+    <string name="prueba_det">Mira qué entiende Exy y si se activaría</string>
+    <string name="historial_titulo">Historial</string>
+    <string name="historial_det">Últimas activaciones y las que ignoró</string>
+    <string name="historial_det_n">%1$d activaciones guardadas</string>
+    <string name="administrar_comandos">Agregar o cambiar comandos</string>
+    <string name="administrar_det">Favorito: %1$s</string>
+
+    <!-- Prueba tu voz -->
+    <string name="prueba_estado_listo">Toca probar</string>
+    <string name="prueba_estado_escuchando">Te escucho</string>
+    <string name="prueba_estado_cargando">Preparando…</string>
+    <string name="prueba_detalle">Di un comando como lo harías siempre. Aquí nada se abre: solo ves el resultado.</string>
+    <string name="prueba_btn_probar">Probar</string>
+    <string name="prueba_btn_detener">Detener</string>
+    <string name="prueba_resultados">Resultados</string>
+    <string name="prueba_ayuda">Si la frase aparece pero dice «confianza baja», sube la precisión a Sensible. Mientras pruebas, la escucha de fondo queda en pausa.</string>
+    <string name="prueba_abriria">Se activaría: abre %1$s · confianza %2$d %%</string>
+    <string name="prueba_baja">No se activaría: confianza %1$d %% (mínimo %2$d %%)</string>
+    <string name="prueba_sin_frase">No reconocí «Oye Exi» en la frase</string>
+    <string name="prueba_nada">No entendí nada. Acércate al micrófono.</string>
+
+    <!-- Historial -->
+    <string name="historial_ayuda">Las últimas 50 veces que Exy oyó «Oye Exi». Las ignoradas tenían la frase, pero con poca confianza.</string>
+    <string name="historial_vacio">Todavía no hay activaciones.</string>
+    <string name="historial_borrar">Borrar</string>
+    <string name="historial_abrio">Abrió %1$s · %2$d %%</string>
+    <string name="historial_no_abrio">No pudo abrir %1$s</string>
+    <string name="historial_ignorada">Ignorada (%1$s) · confianza %2$d %%</string>
+
+    <!-- Comandos -->
+    <string name="comandos_titulo">Comandos</string>
+    <string name="favorito_titulo">«Oye Exi» a secas</string>
+    <string name="favorito_fila">Abre %1$s</string>
+    <string name="favorito_cambiar">Toca para cambiar</string>
+    <string name="favorito_ayuda">Tu favorito se abre cuando dices solo «Oye Exi».</string>
+    <string name="elegir_favorito">Elegir favorito</string>
+    <string name="tus_comandos">Tus comandos</string>
+    <string name="sin_comandos_propios">Agrega apps como Spotify o WhatsApp: eliges la app y le enseñas a Exy cómo la nombras.</string>
+    <string name="agregar_app">Agregar app</string>
+    <string name="integrados">Incluidos</string>
+    <string name="elegir_app">Elige la app</string>
+    <string name="ensenar_titulo">Enseñar «%1$s»</string>
+    <string name="ensenar_instruccion">Di solo el nombre de la app, como lo dirías después de «Oye Exi».</string>
+    <string name="ensenar_otra">Bien. Si lo dices de otra forma, repítelo; si no, guarda.</string>
+    <string name="ensenar_escuchando">Te escucho…</string>
+    <string name="ensenar_frases">Entendí:\n%1$s</string>
+    <string name="ensenar_guardar">Guardar</string>
+    <string name="ensenar_repetir">Otra forma</string>
+    <string name="ensenar_nada">No entendí. Inténtalo de nuevo.</string>
+    <string name="ensenar_guardado">Listo: «Oye Exi, %1$s» abre %2$s</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="borrar_comando">Borrar %1$s</string>
+    <string name="frases_de">«%1$s»</string>
+
+    <!-- Actualizaciones -->
+    <string name="hay_actualizacion">Versión nueva %1$s disponible</string>
+    <string name="descargar">Descargar</string>
+    <string name="buscar_actualizacion">Buscar actualización</string>
+    <string name="sin_actualizacion">Tienes la última versión</string>
+    <string name="error_actualizacion">No pude revisar. ¿El repositorio es público y hay internet?</string>
 </resources>

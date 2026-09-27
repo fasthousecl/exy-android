@@ -61,6 +61,33 @@
                     tools:text="v1.0.20" />
             </LinearLayout>
 
+            <!-- Versión nueva disponible (solo si la hay) -->
+            <LinearLayout
+                android:id="@+id/bannerActualizacion"
+                style="@style/Exy.Card"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingEnd="6dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtActualizacion"
+                    style="@style/Exy.ItemTitle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDescargar"
+                    style="@style/Exy.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/descargar" />
+            </LinearLayout>
+
             <!-- Estado principal: la X del logo dentro del anillo -->
             <FrameLayout
                 android:layout_width="220dp"
@@ -190,6 +217,27 @@
                 android:id="@+id/listaComandos"
                 style="@style/Exy.Card" />
 
+            <!-- Herramientas -->
+            <TextView
+                style="@style/Exy.Label"
+                android:text="@string/section_herramientas" />
+
+            <LinearLayout style="@style/Exy.Card">
+
+                <include
+                    android:id="@+id/filaPrueba"
+                    layout="@layout/item_accion" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/exy_hair" />
+
+                <include
+                    android:id="@+id/filaHistorial"
+                    layout="@layout/item_accion" />
+            </LinearLayout>
+
             <!-- Permisos listos (reemplaza a los pasos cuando ya están todos) -->
             <LinearLayout
                 android:id="@+id/permisosListos"
@@ -280,6 +328,84 @@
             <TextView
                 style="@style/Exy.Hint"
                 android:text="@string/help_tiempo" />
+
+            <!-- Pausas automáticas -->
+            <TextView
+                style="@style/Exy.Label"
+                android:text="@string/section_automatico" />
+
+            <LinearLayout style="@style/Exy.Card">
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/swDescanso"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="64dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:text="@string/descanso"
+                    android:textColor="@color/exy_text"
+                    android:textSize="15sp"
+                    app:thumbTint="@color/switch_thumb"
+                    app:trackTint="@color/switch_track" />
+
+                <LinearLayout
+                    android:id="@+id/filaHoras"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDesde"
+                        style="@style/Exy.Button.Secondary"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnHasta"
+                        style="@style/Exy.Button.Secondary"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/exy_hair" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/swAuriculares"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="64dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:text="@string/auriculares"
+                    android:textColor="@color/exy_text"
+                    android:textSize="15sp"
+                    app:thumbTint="@color/switch_thumb"
+                    app:trackTint="@color/switch_track" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/Exy.Hint"
+                android:text="@string/automatico_ayuda" />
+
+            <!-- Pie -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBuscarActualizacion"
+                style="@style/Exy.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:text="@string/buscar_actualizacion" />
         </LinearLayout>
     </FrameLayout>
 </ScrollView>

@@ -1,14 +1,19 @@
 package cl.exy.app
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -17,12 +22,12 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.service.quicksettings.TileService
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import org.vosk.LibVosk
 import org.vosk.LogLevel
-import org.vosk.Model
 import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
 import org.vosk.android.SpeechService
@@ -34,21 +39,27 @@ import java.util.concurrent.Executors
  * Servicio en primer plano que mantiene a Vosk escuchando «oye exi» y sus
  * comandos (ver [Comandos]), y abre la app que corresponda.
  *
- * Todo lo que toca a Vosk (cargar el modelo, abrir y cerrar el micrófono) corre
- * en un único hilo de trabajo, en orden. El estado y la notificación se manejan
- * en el hilo principal, que es también donde Vosk entrega sus resultados.
- * [generation] invalida resultados viejos: si el usuario pausa mientras la
- * escucha se está iniciando, ese inicio se descarta.
+ * Todo lo que toca a Vosk (abrir y cerrar el micrófono) corre en un único hilo
+ * de trabajo, en orden. El estado y la notificación se manejan en el hilo
+ * principal, que es también donde Vosk entrega sus resultados. [generation]
+ * invalida resultados viejos: si el usuario pausa mientras la escucha se está
+ * iniciando, ese inicio se descarta.
+ *
+ * Además de la pausa manual, hay dos pausas automáticas que se levantan solas:
+ * el horario de descanso ([State.RESTING]) y el modo auriculares
+ * ([State.NO_HEADPHONES]).
  */
 class WakeWordService : Service() {
 
-    enum class State { STOPPED, STARTING, LISTENING, PAUSED, COOLDOWN, ERROR }
+    enum class State { STOPPED, STARTING, LISTENING, PAUSED, COOLDOWN, ERROR, RESTING, NO_HEADPHONES }
+
+    /** Por qué no se debe escuchar ahora, aunque el servicio esté activo. */
+    private enum class Bloqueo { DESCANSO, SIN_AURICULARES }
 
     private val handler = Handler(Looper.getMainLooper())
     private val worker: ExecutorService = Executors.newSingleThreadExecutor()
 
-    /** Solo se leen y escriben desde [worker]. El modelo se carga una vez y se reutiliza. */
-    private var model: Model? = null
+    /** Solo se leen y escriben desde [worker]. */
     private var recognizer: Recognizer? = null
     private var speech: SpeechService? = null
 
@@ -59,9 +70,16 @@ class WakeWordService : Service() {
 
     private val resumeRunnable = Runnable { startListening() }
 
+    /** Avisa cuando se conectan o desconectan audífonos (modo auriculares). */
+    private val dispositivos = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) = revisarCondiciones()
+        override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) = revisarCondiciones()
+    }
+
     override fun onCreate() {
         super.onCreate()
         LibVosk.setLogLevel(LogLevel.WARNINGS)
+        getSystemService(AudioManager::class.java).registerAudioDeviceCallback(dispositivos, handler)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -80,7 +98,11 @@ class WakeWordService : Service() {
         when (intent?.action) {
             ACTION_PAUSE -> pause()
             ACTION_RESUME -> startListening()
-            ACTION_RELOAD -> if (state == State.LISTENING || state == State.ERROR) startListening()
+            ACTION_TOGGLE -> if (state == State.PAUSED || state == State.ERROR) startListening() else pause()
+            ACTION_RELOAD -> {
+                if (state == State.LISTENING || state == State.ERROR) startListening() else revisarCondiciones()
+            }
+            ACTION_CHECK -> revisarCondiciones()
             // ACTION_START, o reinicio del sistema (intent nulo)
             else -> if (state == State.STOPPED || state == State.ERROR) startListening()
         }
@@ -90,11 +112,9 @@ class WakeWordService : Service() {
     override fun onDestroy() {
         generation++
         handler.removeCallbacksAndMessages(null)
-        worker.execute {
-            releaseMic()
-            model?.close()
-            model = null
-        }
+        getSystemService(AudioManager::class.java).unregisterAudioDeviceCallback(dispositivos)
+        cancelarAlarma()
+        worker.execute { releaseMic() }
         worker.shutdown()
         releaseWakeLock()
         inForeground = false
@@ -113,6 +133,11 @@ class WakeWordService : Service() {
             fail(getString(R.string.missing_config, missing.joinToString(", ")))
             return
         }
+        bloqueo()?.let {
+            entrarBloqueo(it)
+            return
+        }
+        programarAlarma()
 
         val token = ++generation
         // Sensibilidad alta = se exige menos confianza a cada palabra.
@@ -123,12 +148,11 @@ class WakeWordService : Service() {
         worker.execute {
             releaseMic()
             try {
-                val m = model ?: Model(VoskModel.prepare(applicationContext).absolutePath)
-                    .also { model = it }
+                val m = Motor.modelo(applicationContext)
                 val gramatica = Comandos.cargar(applicationContext).gramatica
-                val r = Recognizer(m, SAMPLE_RATE, gramatica).apply { setWords(true) }
+                val r = Recognizer(m, Motor.SAMPLE_RATE, gramatica).apply { setWords(true) }
                 recognizer = r
-                val s = SpeechService(r, SAMPLE_RATE)
+                val s = SpeechService(r, Motor.SAMPLE_RATE)
                 speech = s
                 if (!s.startListening(listener)) throw IllegalStateException("la escucha ya estaba activa")
                 handler.post {
@@ -169,22 +193,33 @@ class WakeWordService : Service() {
                 null
             } ?: return
             lastHeard = heard
+            val ctx = this@WakeWordService
             val deteccion = try {
-                Comandos.cargar(this@WakeWordService).detectar(hypothesis, minConfidence)
+                Comandos.cargar(ctx).detectar(hypothesis, minConfidence, Destino.favorito(ctx))
             } catch (e: Exception) {
                 Log.w(TAG, "Resultado de Vosk inválido: $hypothesis", e)
                 null
             }
-            if (deteccion != null) onWakeWord(deteccion.destino) else listeners.forEach { it() }
+            when {
+                deteccion == null -> listeners.forEach { it() }
+                deteccion.aceptada -> onWakeWord(deteccion)
+                else -> {
+                    // Estaba la frase, pero con poca confianza: queda en el historial.
+                    registrar(deteccion, Historial.Resultado.IGNORADA)
+                    listeners.forEach { it() }
+                }
+            }
         }
     }
 
-    private fun onWakeWord(destino: Destino) {
+    private fun onWakeWord(deteccion: Comandos.Deteccion) {
+        val destino = deteccion.destino
         val next = ++generation
         val delayMs = ExySettings(this).resumeDelaySeconds * 1000L
 
         vibrate()
-        releaseWakeLock()
+        // El wake lock sigue tomado durante la espera, para que la reanudación
+        // no se atrase si la pantalla se apaga.
         reanudarEn = System.currentTimeMillis() + delayMs
         cuentaTotalMs = delayMs
         lastDestino = destino
@@ -196,12 +231,26 @@ class WakeWordService : Service() {
             releaseMic()
             handler.post {
                 if (next != generation) return@post
-                if (!destino.abrir(this)) {
-                    updateState(State.COOLDOWN, getString(R.string.no_se_pudo_abrir, getString(destino.nombre)))
+                val abrio = destino.abrir(this)
+                registrar(deteccion, if (abrio) Historial.Resultado.ABIERTA else Historial.Resultado.NO_ABRIO)
+                if (!abrio) {
+                    updateState(State.COOLDOWN, getString(R.string.no_se_pudo_abrir, destino.nombre(this)))
                 }
                 handler.postDelayed(resumeRunnable, delayMs)
             }
         }
+    }
+
+    private fun registrar(d: Comandos.Deteccion, resultado: Historial.Resultado) {
+        Historial(this).agregar(
+            Historial.Entrada(
+                cuando = System.currentTimeMillis(),
+                oido = d.texto.replace("[unk]", "").trim(),
+                destino = d.destino.nombre(this),
+                confianza = d.confianza,
+                resultado = resultado,
+            ),
+        )
     }
 
     /** Error en plena escucha (por ejemplo, otra app tomó el micrófono). Reintenta solo. */
@@ -233,6 +282,7 @@ class WakeWordService : Service() {
     private fun shutdown() {
         generation++
         handler.removeCallbacks(resumeRunnable)
+        cancelarAlarma()
         worker.execute { releaseMic() }
         releaseWakeLock()
         updateState(State.STOPPED, null, notify = false)
@@ -241,7 +291,7 @@ class WakeWordService : Service() {
         stopSelf()
     }
 
-    /** Solo desde [worker]. Cierra el micrófono; el modelo queda cargado. */
+    /** Solo desde [worker]. Cierra el micrófono; el modelo queda cargado en [Motor]. */
     private fun releaseMic() {
         speech?.let {
             try {
@@ -255,6 +305,61 @@ class WakeWordService : Service() {
         recognizer?.close()
         recognizer = null
     }
+
+    // --------------------------------------------- pausas automáticas
+
+    private fun bloqueo(): Bloqueo? {
+        val s = ExySettings(this)
+        return when {
+            s.enDescanso() -> Bloqueo.DESCANSO
+            s.soloAuriculares && !Auriculares.conectados(this) -> Bloqueo.SIN_AURICULARES
+            else -> null
+        }
+    }
+
+    private fun entrarBloqueo(b: Bloqueo) {
+        generation++
+        handler.removeCallbacks(resumeRunnable)
+        worker.execute { releaseMic() }
+        releaseWakeLock()
+        val nuevo = if (b == Bloqueo.DESCANSO) State.RESTING else State.NO_HEADPHONES
+        if (state != nuevo) updateState(nuevo, null)
+        programarAlarma()
+    }
+
+    /**
+     * Revisa horario y audífonos: entra en pausa automática si corresponde, o
+     * vuelve a escuchar si la causa ya pasó. No toca la pausa manual ni la espera
+     * tras abrir una app (esa revisa al terminar).
+     */
+    private fun revisarCondiciones() {
+        if (!inForeground) return
+        val b = bloqueo()
+        val automatica = state == State.RESTING || state == State.NO_HEADPHONES
+        when {
+            b != null && (state == State.LISTENING || state == State.STARTING || automatica) -> entrarBloqueo(b)
+            b == null && automatica -> startListening()
+            else -> programarAlarma()
+        }
+    }
+
+    /** Despierta al servicio en el próximo inicio o fin del horario de descanso. */
+    private fun programarAlarma() {
+        val s = ExySettings(this)
+        if (!s.descansoActivo) {
+            cancelarAlarma()
+            return
+        }
+        // Inexacta a propósito (unos minutos de margen): no requiere permisos extra.
+        getSystemService(AlarmManager::class.java)
+            .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, s.proximoCambio(), alarmaIntent())
+    }
+
+    private fun cancelarAlarma() {
+        getSystemService(AlarmManager::class.java).cancel(alarmaIntent())
+    }
+
+    private fun alarmaIntent(): PendingIntent = serviceIntent(ACTION_CHECK, 9)
 
     // ------------------------------------------------------- primer plano
 
@@ -290,6 +395,8 @@ class WakeWordService : Service() {
                 .notify(NOTIFICATION_ID, buildNotification())
         }
         listeners.forEach { it() }
+        // El botón de ajustes rápidos refleja el estado.
+        TileService.requestListeningState(this, ComponentName(this, ExyTile::class.java))
     }
 
     private fun buildNotification(): Notification {
@@ -300,13 +407,17 @@ class WakeWordService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-        val nombreDestino = getString((lastDestino ?: Destino.FAVORITO).nombre)
+        val s = ExySettings(this)
+        val nombreDestino = (lastDestino ?: Destino.favorito(this)).nombre(this)
         val (titulo, texto) = when (state) {
             State.STOPPED, State.STARTING -> getString(R.string.notif_starting) to null
             State.LISTENING -> getString(R.string.notif_listening) to getString(R.string.notif_listening_text)
             State.PAUSED -> getString(R.string.notif_paused) to getString(R.string.notif_paused_text)
             State.COOLDOWN -> getString(R.string.notif_cooldown, nombreDestino) to
                 (lastMessage ?: getString(R.string.notif_cooldown_text))
+            State.RESTING -> getString(R.string.notif_descanso) to
+                getString(R.string.notif_descanso_text, ExySettings.hora(s.descansoHasta))
+            State.NO_HEADPHONES -> getString(R.string.notif_auriculares) to getString(R.string.notif_auriculares_text)
             State.ERROR -> getString(R.string.notif_error) to lastMessage
         }
 
@@ -339,6 +450,7 @@ class WakeWordService : Service() {
                 builder.addAction(0, getString(R.string.action_listen_now), serviceIntent(ACTION_RESUME, 1))
                 builder.addAction(0, getString(R.string.action_pause), serviceIntent(ACTION_PAUSE, 2))
             }
+            State.RESTING, State.NO_HEADPHONES -> Unit
             else -> builder.addAction(0, getString(R.string.action_pause), serviceIntent(ACTION_PAUSE, 2))
         }
         builder.addAction(0, getString(R.string.action_stop), serviceIntent(ACTION_STOP, 3))
@@ -387,12 +499,13 @@ class WakeWordService : Service() {
         private const val TAG = "Exy"
         private const val NOTIFICATION_ID = 1
         private const val RETRY_DELAY_MS = 15_000L
-        private const val SAMPLE_RATE = 16_000f
 
         const val ACTION_START = "cl.exy.app.START"
         const val ACTION_PAUSE = "cl.exy.app.PAUSE"
         const val ACTION_RESUME = "cl.exy.app.RESUME"
+        const val ACTION_TOGGLE = "cl.exy.app.TOGGLE"
         const val ACTION_RELOAD = "cl.exy.app.RELOAD"
+        const val ACTION_CHECK = "cl.exy.app.CHECK"
         const val ACTION_STOP = "cl.exy.app.STOP"
 
         @Volatile
@@ -438,7 +551,7 @@ class WakeWordService : Service() {
             )
         }
 
-        /** Se usa desde la app en primer plano, así que no hace falta startForegroundService. */
+        /** Solo con el servicio activo (se usa desde la app, el botón rápido o la alarma). */
         fun send(context: Context, action: String) {
             if (!isRunning) return
             context.startService(Intent(context, WakeWordService::class.java).setAction(action))

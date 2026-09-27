@@ -20,7 +20,8 @@ versión web (Gemini sin app cae en el asistente del sistema).
 
 - Android 10 o superior (minSdk 29, targetSdk 36).
 - Reconocimiento **sin internet** con [Vosk](https://alphacephei.com/vosk/) y su
-  modelo pequeño en español. Nada de lo que dices sale del teléfono.
+  modelo pequeño en español. Nada de lo que dices sale del teléfono (internet
+  solo se usa para avisar de versiones nuevas).
 - Sin cuentas ni claves: el modelo de voz viene incluido en el APK.
 - Todo se compila en la nube con GitHub Actions: no necesitas computador.
 
@@ -81,6 +82,29 @@ ajustar: si dices «Oye Exi», aparece la frase y no se activa, sube a
 En **Comandos** está la lista de frases, a qué app va cada una y si esa app está
 instalada (*Web* si no). La flecha de cada fila abre la app para probarla sin
 hablar.
+
+---
+
+### Herramientas y funciones extra
+
+- **Prueba tu voz**: di un comando y mira qué entendió Exy y si se habría
+  activado (y con qué confianza), sin abrir ninguna app.
+- **Historial**: las últimas 50 veces que Exy oyó «Oye Exi», qué abrió y cuáles
+  ignoró por confianza baja. Útil para saber si se activa sola.
+- **Comandos propios**: en *Agregar o cambiar comandos → Agregar app* eliges una
+  app (Spotify, WhatsApp…) y dices su nombre. Exy guarda lo que entendió (hasta
+  3 formas) y desde ahí «Oye Exi, Spotify» la abre.
+- **Favorito**: en la misma pantalla eliges qué abre «Oye Exi» a secas.
+- **Horario de descanso**: entre las horas que elijas el micrófono queda libre;
+  Exy vuelve a escuchar sola al terminar (con unos minutos de margen).
+- **Solo con audífonos**: Exy escucha solo con audífonos Bluetooth conectados.
+- **Botón en ajustes rápidos**: baja la cortina, toca el lápiz y arrastra
+  **Exy**. Un toque pausa o reanuda; si estaba detenida, abre la app y empieza.
+- **Actualizaciones**: al abrir la app revisa (como mucho cada 6 horas) si hay
+  una versión nueva en GitHub y muestra *Descargar*. Necesita que el
+  repositorio sea público. Es la única conexión a internet de Exy.
+- **WhatsApp, Maps y otras tareas**: di «Oye Exi» y pídeselo a Gemini
+  («envía un WhatsApp a Juan diciendo…», «navega a…»).
 
 ---
 
@@ -175,9 +199,9 @@ avisa que el modelo de voz no viene incluido.
 
 ### Privacidad y firma
 
-- El audio nunca sale del teléfono: Vosk funciona sin conexión y la app no
-  declara el permiso `INTERNET`. La app no se respalda en la nube
-  (`allowBackup=false`).
+- El audio nunca sale del teléfono: Vosk funciona sin conexión. El permiso
+  `INTERNET` se usa solo para leer la última versión publicada en GitHub. La
+  app no se respalda en la nube (`allowBackup=false`).
 - `app/debug.keystore` es una llave de **depuración** con las credenciales
   públicas estándar de Android (`android` / `androiddebugkey`). No protege nada:
   existe solo para que cada APK se firme igual y se pueda actualizar encima del

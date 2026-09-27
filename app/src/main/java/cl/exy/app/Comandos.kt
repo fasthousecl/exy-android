@@ -5,7 +5,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Las frases que Exy reconoce, leídas de assets/comandos.json.
+ * Las frases que Exy reconoce: las de assets/comandos.json más las que agregó
+ * el usuario ([ComandosUsuario]).
  *
  * Una frase es «<oye> <exi> [<prefijo>] [<destino>]»: «oye exi» solo abre el
  * favorito (Gemini) y «oye exi vamos a claude code» abre Claude Code.
@@ -31,8 +32,12 @@ class Comandos private constructor(
     private val atajos: Map<String, Destino>,
 ) {
 
-    /** Resultado de reconocer una frase de activación. */
-    data class Deteccion(val destino: Destino, val texto: String)
+    /**
+     * Resultado de reconocer una frase de activación. [aceptada] es false si la
+     * frase estaba pero la confianza no alcanzó el mínimo (queda en el historial
+     * como «ignorada»).
+     */
+    data class Deteccion(val destino: Destino, val texto: String, val confianza: Double, val aceptada: Boolean)
 
     private val activaciones: List<String> = oye.flatMap { o -> exi.map { e -> "$o $e" } }
 
@@ -54,11 +59,12 @@ class Comandos private constructor(
     ).toString()
 
     /**
-     * Revisa un resultado final de Vosk (con `setWords(true)`). Devuelve la
-     * detección si contiene la frase de activación y la confianza mínima de sus
-     * palabras supera [confianzaMinima]; si no, null.
+     * Revisa un resultado final de Vosk (con `setWords(true)`). Devuelve null si
+     * no contiene la frase de activación; si la contiene, la detección indica si
+     * la confianza mínima de sus palabras alcanza [confianzaMinima].
+     * «Oye Exi» a secas abre [favorito].
      */
-    fun detectar(resultadoJson: String, confianzaMinima: Float): Deteccion? {
+    fun detectar(resultadoJson: String, confianzaMinima: Float, favorito: Destino): Deteccion? {
         val json = JSONObject(resultadoJson)
         val texto = json.optString("text").trim()
         if (texto.isEmpty()) return null
@@ -87,7 +93,7 @@ class Comandos private constructor(
         val usadas: List<String>
         if (resto.isEmpty()) {
             if (debil) return null
-            destino = Destino.FAVORITO
+            destino = favorito
             usadas = palabras.subList(inicio, inicio + largo)
         } else {
             val orden = prefijos.sortedByDescending { it.length }
@@ -98,7 +104,8 @@ class Comandos private constructor(
             usadas = palabras.subList(inicio, inicio + largo) + resto.split(' ')
         }
 
-        return if (confianza(json, usadas) >= confianzaMinima) Deteccion(destino, texto) else null
+        val conf = confianza(json, usadas)
+        return Deteccion(destino, texto, conf, aceptada = conf >= confianzaMinima)
     }
 
     /** La confianza más baja entre las palabras usadas de la frase. */
@@ -125,6 +132,11 @@ class Comandos private constructor(
             cache ?: leer(context).also { cache = it }
         }
 
+        /** Tras cambiar los comandos del usuario: la próxima carga rehace la gramática. */
+        fun invalidar() {
+            cache = null
+        }
+
         private fun leer(context: Context): Comandos {
             val json = JSONObject(
                 context.assets.open(ARCHIVO).bufferedReader().use { it.readText() },
@@ -132,12 +144,17 @@ class Comandos private constructor(
             val destinos = mutableMapOf<String, Destino>()
             val porId = json.getJSONObject("destinos")
             for (id in porId.keys()) {
-                val destino = Destino.porId(id) ?: continue
+                val destino = integrado(id) ?: continue
                 porId.getJSONArray(id).strings().forEach { destinos[it] = destino }
             }
             val atajos = mutableMapOf<String, Destino>()
             json.optJSONObject("atajos")?.let { a ->
-                for (frase in a.keys()) Destino.porId(a.getString(frase))?.let { atajos[frase] = it }
+                for (frase in a.keys()) integrado(a.getString(frase))?.let { atajos[frase] = it }
+            }
+            // Los comandos del usuario: sus frases ya vienen de lo que Vosk entendió.
+            for (c in ComandosUsuario(context).lista()) {
+                val destino = Destino.deApp(c.paquete, c.nombre)
+                c.frases.map { it.trim() }.filter { it.isNotEmpty() }.forEach { destinos[it] = destino }
             }
             return Comandos(
                 oye = json.getJSONArray("oye").strings(),
@@ -148,6 +165,8 @@ class Comandos private constructor(
                 atajos = atajos,
             )
         }
+
+        private fun integrado(id: String): Destino? = Destino.INTEGRADOS.firstOrNull { it.id == id }
 
         private fun JSONArray.strings(): List<String> = List(length()) { getString(it) }
 
