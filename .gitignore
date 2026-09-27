@@ -22,3 +22,7 @@ vosk-model-*.zip
 .env
 *.env
 secrets.properties
+
+# Python
+__pycache__/
+*.pyc
